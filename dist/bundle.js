@@ -53,14 +53,14 @@
       <div class="limelight" id="${this.id}">
         <svg height="100%" width="100%">
           <defs>
-            <mask>
+            <mask id="${this.id}-mask">
               <rect x="0" y="0" width="100%" height="100%" fill="white" />
               ${this.elems.target.map((elem, i) => `
                 <rect class="${this.id}-window" id="${this.id}-window-${i}" x="0" y="0" width="0" height="0" fill="black" />
               `).join('')}
             </mask>
           </defs>
-          <rect x="0" y="0" width="100%" height="100%" fill="black" opacity="0.8" style="mask: url('#${this.id}'); pointer-events: none;" />
+          <rect x="0" y="0" width="100%" height="100%" fill="black" opacity="0.8" style="mask: url('#${this.id}-mask'); pointer-events: none;" />
         </svg> 
       </div>
     `;
@@ -84,6 +84,11 @@
       document.body.appendChild(svgElem);
 
       this.reposition();
+      this.bindListeners();
+    }
+
+    bindListeners() {
+      window.addEventListener('scroll', this.reposition.bind(this));
     }
   }
 
