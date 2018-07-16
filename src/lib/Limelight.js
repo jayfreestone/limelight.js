@@ -5,6 +5,8 @@ class Limelight {
   constructor(target, options = {}) {
     this.id = 'clipElem';
 
+    this.topOffset = window.pageYOffset;
+
     this.elems = {
       // Handle querySelector or querySelectorAll
       target: target.length > 1 ? Array.from(target) : [target],
@@ -12,10 +14,22 @@ class Limelight {
 
     this.options = u.mergeOptions(Limelight.defaultOptions, options);
 
+    this.isOpen = false;
+
+    this.events = {
+      open: new Event('open'),
+      close: new Event('close'),
+    };
+
+    this.close = this.close.bind(this);
+    this.reposition = this.reposition.bind(this);
+    this.repositionLoop = this.repositionLoop.bind(this);
+
     this.init();
   }
 
   destroy() {
+    if (this.loop) cancelAnimationFrame(this.loop);
     this.elems.limelight.parentNode.removeChild(this.elems.limelight);
   }
 
@@ -30,7 +44,7 @@ class Limelight {
    */
   renderSVG() {
     return `
-      <div class="limelight" id="${this.id}">
+      <div class="limelight" id="${this.id}" aria-hidden>
         <svg height="100%" width="100%">
           <defs>
             <mask id="${this.id}-mask">
@@ -56,6 +70,16 @@ class Limelight {
     });
   }
 
+  repositionLoop() {
+    if (this.topOffset !== window.pageYOffset) {
+      this.reposition();
+    }
+
+    this.topOffset = window.pageYOffset;
+
+    this.loop = requestAnimationFrame(this.repositionLoop);
+  }
+
   init() {
     const svgElem = this.createBGElem();
     this.elems.limelight = svgElem.querySelector(`#${this.id}`);
@@ -64,16 +88,70 @@ class Limelight {
     document.body.appendChild(svgElem);
 
     this.reposition();
-    this.bindListeners();
+    // this.bindListeners();
   }
 
-  bindListeners() {
-    window.addEventListener('scroll', this.reposition.bind(this));
+  open(e) {
+    if (this.isOpen) return;
+
+    this.isOpen = true;
+
+    // If it looks like an event, try to stop it bubbling.
+    if (e && e.target) {
+      e.stopPropagation();
+    }
+
+    this.elems.limelight.classList.add(this.options.classes.activeClass);
+
+    this.broadcastEvent(this.events.open);
+
+    // If we don't encourage the listener to happen on next-tick,
+    // we'll end up with the listener firing for this if it was triggered on-click.
+    // This is safeguard for when the event is not passed in and thus propgation
+    // can't be stopped.
+    requestAnimationFrame(() => {
+      if (this.options.closeOnClick) {
+        document.addEventListener('click', this.close);
+      }
+
+      this.loop = this.repositionLoop();
+    });
   }
+
+  close() {
+    if (!this.isOpen) return;
+
+    this.isOpen = false;
+
+    this.elems.limelight.classList.remove(this.options.classes.activeClass);
+
+    this.broadcastEvent(this.events.close);
+
+    document.removeEventListener('click', this.close);
+
+    cancelAnimationFrame(this.loop);
+  }
+
+  broadcastEvent(event) {
+    [...this.elems.target, this.elems.limelight]
+      .forEach(elem => elem.dispatchEvent(event));
+  }
+
+  on(event, callback) {
+    this.elems.limelight.addEventListener(event, callback);
+  }
+
+  // bindListeners() {
+    // this.loop = requestAnimationFrame(this.repositionLoop);
+  // }
 }
 
 Limelight.defaultOptions = {
   offset: 10,
+  closeOnClick: true,
+  classes: {
+    activeClass: 'limelight--is-active',
+  },
 };
 
 export default Limelight;

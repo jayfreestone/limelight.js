@@ -60,12 +60,20 @@
             right: 0;
             bottom: 0;
             left: 0;
+            opacity: 0;
+            visibility: hidden;
             pointer-events: none;
+        }
+
+        .limelight--is-active {
+            opacity: 1;
+            visibility: visible;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <button class="js-start">Start</button>
         <div class="content">
             Main content
             <div class="box__thing">
