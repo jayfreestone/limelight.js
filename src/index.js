@@ -1,7 +1,8 @@
 import Limelight from './lib/Limelight';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const targets = document.querySelectorAll('.box__thing');
+  // const targets = document.querySelectorAll('.box__thing');
+  const targets = document.querySelector('.box__thing');
   const boxGrad = new Limelight(targets);
 
   document.querySelector('.js-start').addEventListener('click', (e) => {
@@ -17,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
   boxGrad.on('close', () => {
     console.log('closing');
   });
+
+  setTimeout(() => {
+    boxGrad.refocus(document.querySelector('.other-thing'));
+  }, 2000);
 
   // targets.forEach(target => {
   //   target.addEventListener('open', () => {

@@ -12,6 +12,8 @@ class Limelight {
       target: target.length > 1 ? Array.from(target) : [target],
     };
 
+    this.positions = [];
+
     this.options = u.mergeOptions(Limelight.defaultOptions, options);
 
     this.isOpen = false;
@@ -60,14 +62,45 @@ class Limelight {
     `;
   }
 
-  reposition() {
+  reposition(animate = false) {
     this.elems.maskWindows.forEach((mask, i) => {
-      const pos = this.elems.target[i].getBoundingClientRect();
-      mask.setAttribute('x', pos.x - this.options.offset);
-      mask.setAttribute('y', pos.y - this.options.offset);
-      mask.setAttribute('width', pos.width + (this.options.offset * 2));
-      mask.setAttribute('height', pos.height + (this.options.offset * 2));
+
+      const first = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
+
+      mask.setAttribute('x', first.left);
+      mask.setAttribute('y', first.top);
+      mask.setAttribute('width', first.width);
+      mask.setAttribute('height', first.height);
+
+      const last = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
+
+      // Invert: determine the delta between the 
+      // first and last bounds to invert the element
+      const deltaX = first.left - last.left;
+      const deltaY = first.top - last.top;
+      const deltaW = first.width / last.width;
+      const deltaH = first.height / last.height;
+
+      mask.style.transformOrigin = 'top left';
+      mask.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${deltaW}, ${deltaH})`;
+
+      this.elems.target[i].getBoundingClientRect();
+
+      mask.style.transition = 'all 3s';
+      mask.style.transform = '';
+        
     });
+  }
+
+  calculateOffsets({ left, top, width, height }) {
+    const { offset } = this.options;
+
+    return {
+      left: left - offset,
+      top: top - offset,
+      width: width + (offset * 2),
+      height: height + (offset * 2),
+    };
   }
 
   repositionLoop() {
@@ -139,6 +172,11 @@ class Limelight {
 
   on(event, callback) {
     this.elems.limelight.addEventListener(event, callback);
+  }
+
+  refocus(target) {
+    this.elems.target = target.length > 1 ? Array.from(target) : [target];
+    this.reposition(true);
   }
 
   // bindListeners() {
