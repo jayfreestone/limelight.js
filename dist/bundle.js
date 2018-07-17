@@ -1,7 +1,7 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (factory());
+  (global.Limelight = factory());
 }(this, (function () { 'use strict';
 
   function mergeOptions(defaultOptions = {}, userOptions = {}) {
@@ -354,45 +354,47 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    // const targets = document.querySelectorAll('.box__thing');
-    const targets = document.querySelector('.box__thing');
-    const boxGrad = new Limelight(targets);
+  // document.addEventListener('DOMContentLoaded', () => {
+  //   // const targets = document.querySelectorAll('.box__thing');
+  //   const targets = document.querySelector('.box__thing');
+  //   const boxGrad = new Limelight(targets);
 
-    document.querySelector('.js-start').addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      boxGrad.open();
-    });
+  //   document.querySelector('.js-start').addEventListener('click', (e) => {
+  //     e.stopPropagation();
+  //     e.preventDefault();
+  //     boxGrad.open();
+  //   });
 
-    boxGrad.on('open', (e) => {
-      console.log('opening', e);
-    });
+  //   boxGrad.on('open', (e) => {
+  //     console.log('opening', e);
+  //   });
 
-    boxGrad.on('close', (e) => {
-      console.log('closing', e);
-    });
+  //   boxGrad.on('close', (e) => {
+  //     console.log('closing', e);
+  //   });
 
-    boxGrad.on('reposition', (e) => {
-      console.log('repositioning', e);
-    });
+  //   boxGrad.on('reposition', (e) => {
+  //     console.log('repositioning', e);
+  //   });
 
 
-    setTimeout(() => {
-      boxGrad.refocus(document.querySelector('.other-thing'));
-    }, 2000);
+  //   setTimeout(() => {
+  //     boxGrad.refocus(document.querySelector('.other-thing'));
+  //   }, 2000);
 
-    // targets.forEach(target => {
-    //   target.addEventListener('open', () => {
-    //     console.log('we are opening');
-    //   });
-    //   target.addEventListener('close', () => {
-    //     console.log('we are closing');
-    //   });
-    // })
+  //   // targets.forEach(target => {
+  //   //   target.addEventListener('open', () => {
+  //   //     console.log('we are opening');
+  //   //   });
+  //   //   target.addEventListener('close', () => {
+  //   //     console.log('we are closing');
+  //   //   });
+  //   // })
 
-    console.log(boxGrad);
-  });
+  //   console.log(boxGrad);
+  // });
+
+  return Limelight;
 
 })));
 //# sourceMappingURL=bundle.js.map

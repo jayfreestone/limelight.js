@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Limelight</title>
+    <script src="/dist/bundle.js" defer></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            padding: 2em;
+            height: 200vh;
+            display: flex;
+        }
+
+        .site {
+            display: flex;
+            background: #fff;
+            width: 100%;
+        }
+
+        .box {
+            width: 100vw;
+            background-color: whitesmoke;
+            padding: 1em;
+        }
+
+        h1 {
+            margin: 0;
+            clear: both;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+        }
+
+        .content {
+            width: 80%;
+        }
+
+        .box {
+            width: 20%;
+        }
+
+        .box__thing {
+            width: 100px;
+            height: 100px;
+            background: rebeccapurple;
+        }
+
+        .content > .box__thing {
+            position: sticky;
+            top: 60px;
+        }
+
+        .box.other-thing {
+            margin-top: 180px;
+            background: green;
+            height: 90px;
+        }
+
+        .limelight {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            mix-blend-mode: hard-light;
+            background-color: rgba(0, 0, 0, 0.8);
+            will-change: transform;
+        }
+
+        .limelight--is-active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .limelight__window {
+            background-color: grey;
+            position: absolute;
+        }
+
+        /* .limelight rect {
+            transition: all 3s;
+        } */
+
+    </style>
+</head>
+<body>
+    <div class="site">
+        <div class="container">
+            <button class="js-start">Start</button>
+            <div class="content">
+                Main content
+                <div class="box__thing">
+
+                </div>
+            </div>
+            <div class="box">
+                This is a test
+                <div class="box__thing">
+
+                </div>
+            </div>
+            <div class="box other-thing" id="hmmbox"></div>
+        </div>
+    </div>
+</body>
+</html>

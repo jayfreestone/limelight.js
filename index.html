@@ -6,66 +6,10 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Limelight</title>
     <script src="/dist/bundle.js" defer></script>
+    <script src="/src/demo.js" defer></script>
+    <link rel="stylesheet" href="/src/styles/demo.css">
+    <link href="https://fonts.googleapis.com/css?family=Rubik:400,900" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            padding: 2em;
-            height: 200vh;
-            display: flex;
-        }
-
-        .site {
-            display: flex;
-            background: #fff;
-            width: 100%;
-        }
-
-        .box {
-            width: 100vw;
-            background-color: whitesmoke;
-            padding: 1em;
-        }
-
-        h1 {
-            margin: 0;
-            clear: both;
-        }
-
-        .container {
-            max-width: 1200px;
-            width: 100%;
-            margin: 0 auto;
-            display: flex;
-        }
-
-        .content {
-            width: 80%;
-        }
-
-        .box {
-            width: 20%;
-        }
-
-        .box__thing {
-            width: 100px;
-            height: 100px;
-            background: rebeccapurple;
-        }
-
-        .content > .box__thing {
-            position: sticky;
-            top: 60px;
-        }
-
-        .box.other-thing {
-            margin-top: 180px;
-            background: green;
-            height: 90px;
-        }
-
         .limelight {
             position: fixed;
             top: 0;
@@ -89,31 +33,38 @@
             background-color: grey;
             position: absolute;
         }
-
-        /* .limelight rect {
-            transition: all 3s;
-        } */
-
     </style>
 </head>
 <body>
-    <div class="site">
-        <div class="container">
-            <button class="js-start">Start</button>
-            <div class="content">
-                Main content
-                <div class="box__thing">
-
+    <main class="site">
+        <header class="intro">
+            <div class="intro__inner container">
+                <h1 class="intro__title">Limelight.js</h1>
+                <p class="intro__desc">A tiny (and fast) JavaScript plugin that creates a spotlight around any element on the page.</p>
+                <div class="intro__actions">
+                    <a class="btn" href="https://github.com/jayfreestone/limelight.js" target="_blank" rel="noopener noreferrer">
+                        <img src="/src/img/github-mark.svg" alt="">
+                        Github
+                    </button>
+                    <a class="btn btn--primary" href="#demos">
+                        Demos
+                    </a>
                 </div>
             </div>
-            <div class="box">
-                This is a test
-                <div class="box__thing">
-
+        </header>
+        <section id="#demos">
+            <div class="container">
+                <h2>Demos</h2>
+                <div class="js-demo-basic">
+                    <button class="js-demo-basic__trigger push-bottom">
+                        Shine on
+                    </button>
+                    <div class="box">
+                        A generic box full of great content.
+                    </div>
                 </div>
             </div>
-            <div class="box other-thing" id="hmmbox"></div>
-        </div>
-    </div>
+        </section>
+    </main>
 </body>
 </html>

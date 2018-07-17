@@ -24,11 +24,15 @@ export default {
   ],
   output: {
     file: 'dist/bundle.js',
-    name: 'Bundle',
+    name: 'Limelight',
     sourcemap: true,
     format: 'umd',
+    extend: true,
   },
   plugins: [
-    browsersync({ server: '.' })
+    browsersync({
+      server: '.',
+      files: ['dist/**/*.*', 'src/styles/*.css', '*.html'],
+    })
   ],
 };

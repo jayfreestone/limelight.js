@@ -1,41 +1,43 @@
 import Limelight from './lib/Limelight';
 
-document.addEventListener('DOMContentLoaded', () => {
-  // const targets = document.querySelectorAll('.box__thing');
-  const targets = document.querySelector('.box__thing');
-  const boxGrad = new Limelight(targets);
+export default Limelight;
 
-  document.querySelector('.js-start').addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    boxGrad.open();
-  });
+// document.addEventListener('DOMContentLoaded', () => {
+//   // const targets = document.querySelectorAll('.box__thing');
+//   const targets = document.querySelector('.box__thing');
+//   const boxGrad = new Limelight(targets);
 
-  boxGrad.on('open', (e) => {
-    console.log('opening', e);
-  });
+//   document.querySelector('.js-start').addEventListener('click', (e) => {
+//     e.stopPropagation();
+//     e.preventDefault();
+//     boxGrad.open();
+//   });
 
-  boxGrad.on('close', (e) => {
-    console.log('closing', e);
-  });
+//   boxGrad.on('open', (e) => {
+//     console.log('opening', e);
+//   });
 
-  boxGrad.on('reposition', (e) => {
-    console.log('repositioning', e);
-  });
+//   boxGrad.on('close', (e) => {
+//     console.log('closing', e);
+//   });
+
+//   boxGrad.on('reposition', (e) => {
+//     console.log('repositioning', e);
+//   });
 
 
-  setTimeout(() => {
-    boxGrad.refocus(document.querySelector('.other-thing'));
-  }, 2000);
+//   setTimeout(() => {
+//     boxGrad.refocus(document.querySelector('.other-thing'));
+//   }, 2000);
 
-  // targets.forEach(target => {
-  //   target.addEventListener('open', () => {
-  //     console.log('we are opening');
-  //   });
-  //   target.addEventListener('close', () => {
-  //     console.log('we are closing');
-  //   });
-  // })
+//   // targets.forEach(target => {
+//   //   target.addEventListener('open', () => {
+//   //     console.log('we are opening');
+//   //   });
+//   //   target.addEventListener('close', () => {
+//   //     console.log('we are closing');
+//   //   });
+//   // })
 
-  console.log(boxGrad);
-});
+//   console.log(boxGrad);
+// });
