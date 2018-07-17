@@ -19,11 +19,121 @@
     mergeOptions,
   };
 
+  /**
+   * The base 'event' class used by an EventEmitter.
+   *
+   * @class GenericEvent
+   */
+  class GenericEvent {
+    /**
+     * @param {string} eventType - The 'type' that will be listened for.
+     * @param {object} payload - Any additional data.
+     */
+    constructor(eventType, payload = {}) {
+      this.type = eventType;
+      this.payload = payload;
+    }
+
+    /**
+     * @param {string} eventType
+     */
+    set type(eventType) {
+      // Do not allow re-assignment
+      if (this.eventType) return;
+      this.eventType = eventType;
+    }
+
+    /**
+     * @return string;
+     */
+    get type() {
+      if (!this.eventType) {
+        throw new Error('Not implemented.');
+      }
+
+      return this.eventType;
+    }
+  }
+
+  class CloseEvent extends GenericEvent {
+    constructor(...args) {
+      super('close', ...args);
+    }
+  }
+
+  /**
+   * Indicates the instance has opened.
+   *
+   * @class OpenEvent
+   * @extends {GenericEvent}
+   */
+  class OpenEvent extends GenericEvent {
+    constructor(...args) {
+      super('open', ...args);
+    }
+  }
+
+  class RepositionEvent extends GenericEvent {
+    constructor(...args) {
+      super('reposition', ...args);
+    }
+  }
+
+  /**
+   * Allows registration of callbacks that will be triggered on specific events.
+   *
+   * @class EventEmitter
+   */
+  class EventEmitter {
+    constructor() {
+      this.callbacks = {};
+    }
+
+    /**
+     * Used to listen for an event and fire a callback.
+     *
+     * @param {string} type - The event type, will need to match an existing type.
+     * @param {function} callback - The callback function to run.
+     */
+    on(type, callback) {
+      this.callbacks = Object.assign({}, this.callbacks, {
+        [type]: [...(this.callbacks[type] || []), callback],
+      });
+    }
+
+    /**
+     * Takes an event (e.g. Open) and fires the callbacks for it.
+     *
+     * @param {GenericEvent} event - The event type.
+     * @example emitter.trigger(new OpenEvent());
+     */
+    trigger(event) {
+      if (!(event instanceof GenericEvent)) {
+        console.error('Not a valid GenericEvent instance.', event);
+        return;
+      }
+
+      const callbacks = this.callbacks[event.type];
+
+      if (!callbacks) return;
+
+      callbacks.forEach((cb) => {
+        try {
+          cb(event);
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+  }
+
   // @ts-check
 
-  class Limelight {
+  class LimelightImplementation {
     constructor(target, options = {}) {
       this.id = 'clipElem';
+
+      this.emitter = new EventEmitter();
 
       this.topOffset = window.pageYOffset;
 
@@ -34,20 +144,26 @@
 
       this.positions = [];
 
-      this.options = u.mergeOptions(Limelight.defaultOptions, options);
+      this.options = u.mergeOptions(LimelightImplementation.defaultOptions, options);
 
       this.isOpen = false;
 
-      this.events = {
-        open: new Event('open'),
-        close: new Event('close'),
-      };
-
+      this.on = this.on.bind(this);
+      this.open = this.open.bind(this);
+      this.refocus = this.refocus.bind(this);
       this.close = this.close.bind(this);
       this.reposition = this.reposition.bind(this);
       this.repositionLoop = this.repositionLoop.bind(this);
+      this.handleClick = this.handleClick.bind(this);
 
       this.init();
+
+      this.caches = {
+        targetQuery: {
+          elems: undefined,
+          result: undefined,
+        },
+      };
     }
 
     destroy() {
@@ -67,30 +183,28 @@
     renderSVG() {
       return `
       <div class="limelight" id="${this.id}" aria-hidden>
-        <svg height="100%" width="100%">
-          <defs>
-            <mask id="${this.id}-mask">
-              <rect x="0" y="0" width="100%" height="100%" fill="white" />
-              ${this.elems.target.map((elem, i) => `
-                <rect class="${this.id}-window" id="${this.id}-window-${i}" x="0" y="0" width="0" height="0" fill="black" />
-              `).join('')}
-            </mask>
-          </defs>
-          <rect x="0" y="0" width="100%" height="100%" fill="black" opacity="0.8" style="mask: url('#${this.id}-mask'); pointer-events: none;" />
-        </svg> 
+        ${this.elems.target.map((elem, i) => `
+          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}"></div>
+        `).join('')}
       </div>
     `;
     }
 
-    reposition(animate = false) {
-      this.elems.maskWindows.forEach((mask, i) => {
+    reposition() {
+      this.emitter.trigger(new RepositionEvent());
 
+      this.elems.maskWindows.forEach((mask, i) => {
         const first = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
 
-        mask.setAttribute('x', first.left);
-        mask.setAttribute('y', first.top);
-        mask.setAttribute('width', first.width);
-        mask.setAttribute('height', first.height);
+        mask.style.left = `${first.left}px`;
+        mask.style.top = `${first.top}px`;
+        mask.style.width = `${first.width}px`;
+        mask.style.height = `${first.height}px`;
+
+        // mask.setAttribute('x', first.left);
+        // mask.setAttribute('y', first.top);
+        // mask.setAttribute('width', first.width);
+        // mask.setAttribute('height', first.height);
 
         const last = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
 
@@ -108,7 +222,6 @@
 
         mask.style.transition = 'all 3s';
         mask.style.transform = '';
-          
       });
     }
 
@@ -141,7 +254,6 @@
       document.body.appendChild(svgElem);
 
       this.reposition();
-      // this.bindListeners();
     }
 
     open(e) {
@@ -156,19 +268,39 @@
 
       this.elems.limelight.classList.add(this.options.classes.activeClass);
 
-      this.broadcastEvent(this.events.open);
+      this.emitter.trigger(new OpenEvent());
 
       // If we don't encourage the listener to happen on next-tick,
       // we'll end up with the listener firing for this if it was triggered on-click.
       // This is safeguard for when the event is not passed in and thus propgation
       // can't be stopped.
       requestAnimationFrame(() => {
-        if (this.options.closeOnClick) {
-          document.addEventListener('click', this.close);
-        }
+        document.addEventListener('click', this.handleClick);
 
         this.loop = this.repositionLoop();
       });
+    }
+
+    get targetQuery() {
+      if (this.caches.targetQuery.elems !== this.elems.target) {
+        this.caches.targetQuery.elems = this.elems.target;
+
+        this.caches.targetQuery.result = this.elems.target.reduce((str, elem) => {
+          const id = elem.id ? `#${elem.id}` : '';
+          const classes = [...elem.classList].map(x => `.${x}`).join('');
+          return `${str} ${id}${classes}`;
+        }, '');
+      }
+
+      return this.caches.targetQuery.result;
+    }
+
+    handleClick(e) {
+      if (!this.options.closeOnClick) return;
+
+      if (!e.target.matches(this.targetQuery)) {
+        this.close();
+      }
     }
 
     close() {
@@ -178,39 +310,49 @@
 
       this.elems.limelight.classList.remove(this.options.classes.activeClass);
 
-      this.broadcastEvent(this.events.close);
+      this.emitter.trigger(new CloseEvent());
 
-      document.removeEventListener('click', this.close);
+      document.removeEventListener('click', this.handleClick);
 
       cancelAnimationFrame(this.loop);
     }
 
-    broadcastEvent(event) {
-      [...this.elems.target, this.elems.limelight]
-        .forEach(elem => elem.dispatchEvent(event));
+    static trigger(eventInstance, target) {
+      target.dispatchEvent(eventInstance);
     }
 
     on(event, callback) {
-      this.elems.limelight.addEventListener(event, callback);
+      this.emitter.on(event, callback);
+      // this.elems.limelight.addEventListener(event, callback);
     }
 
     refocus(target) {
       this.elems.target = target.length > 1 ? Array.from(target) : [target];
-      this.reposition(true);
+      // cancelAnimationFrame(this.loop);
+      this.reposition();
     }
-
-    // bindListeners() {
-      // this.loop = requestAnimationFrame(this.repositionLoop);
-    // }
   }
 
-  Limelight.defaultOptions = {
+  LimelightImplementation.defaultOptions = {
     offset: 10,
     closeOnClick: true,
     classes: {
+      window: 'limelight__window',
       activeClass: 'limelight--is-active',
     },
   };
+
+  const api = ['on', 'open', 'refocus'];
+
+  class Limelight {
+    constructor(target, options = {}) {
+      const implementation = new LimelightImplementation(target, options);
+
+      api.forEach((prop) => {
+        this[prop] = implementation[prop];
+      });
+    }
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
     // const targets = document.querySelectorAll('.box__thing');
@@ -223,13 +365,18 @@
       boxGrad.open();
     });
 
-    boxGrad.on('open', () => {
-      console.log('opening');
+    boxGrad.on('open', (e) => {
+      console.log('opening', e);
     });
 
-    boxGrad.on('close', () => {
-      console.log('closing');
+    boxGrad.on('close', (e) => {
+      console.log('closing', e);
     });
+
+    boxGrad.on('reposition', (e) => {
+      console.log('repositioning', e);
+    });
+
 
     setTimeout(() => {
       boxGrad.refocus(document.querySelector('.other-thing'));

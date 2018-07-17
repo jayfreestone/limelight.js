@@ -12,9 +12,15 @@
         }
 
         body {
-            margin: 2em;
-            display: flex;
+            padding: 2em;
             height: 200vh;
+            display: flex;
+        }
+
+        .site {
+            display: flex;
+            background: #fff;
+            width: 100%;
         }
 
         .box {
@@ -69,11 +75,19 @@
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
+            mix-blend-mode: hard-light;
+            background-color: rgba(0, 0, 0, 0.8);
+            will-change: transform;
         }
 
         .limelight--is-active {
             opacity: 1;
             visibility: visible;
+        }
+
+        .limelight__window {
+            background-color: grey;
+            position: absolute;
         }
 
         /* .limelight rect {
@@ -83,21 +97,23 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <button class="js-start">Start</button>
-        <div class="content">
-            Main content
-            <div class="box__thing">
+    <div class="site">
+        <div class="container">
+            <button class="js-start">Start</button>
+            <div class="content">
+                Main content
+                <div class="box__thing">
 
+                </div>
             </div>
-        </div>
-        <div class="box">
-            This is a test
-            <div class="box__thing">
+            <div class="box">
+                This is a test
+                <div class="box__thing">
 
+                </div>
             </div>
+            <div class="box other-thing" id="hmmbox"></div>
         </div>
-        <div class="box other-thing"></div>
     </div>
 </body>
 </html>

@@ -11,13 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
     boxGrad.open();
   });
 
-  boxGrad.on('open', () => {
-    console.log('opening');
+  boxGrad.on('open', (e) => {
+    console.log('opening', e);
   });
 
-  boxGrad.on('close', () => {
-    console.log('closing');
+  boxGrad.on('close', (e) => {
+    console.log('closing', e);
   });
+
+  boxGrad.on('reposition', (e) => {
+    console.log('repositioning', e);
+  });
+
 
   setTimeout(() => {
     boxGrad.refocus(document.querySelector('.other-thing'));

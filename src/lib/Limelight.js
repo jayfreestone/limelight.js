@@ -1,9 +1,15 @@
 // @ts-check
 import u from '../utils';
+import CloseEvent from './events/types/CloseEvent';
+import OpenEvent from './events/types/OpenEvent';
+import RepositionEvent from './events/types/RepositionEvent';
+import EventEmitter from './events/EventEmitter';
 
-class Limelight {
+class LimelightImplementation {
   constructor(target, options = {}) {
     this.id = 'clipElem';
+
+    this.emitter = new EventEmitter();
 
     this.topOffset = window.pageYOffset;
 
@@ -14,20 +20,26 @@ class Limelight {
 
     this.positions = [];
 
-    this.options = u.mergeOptions(Limelight.defaultOptions, options);
+    this.options = u.mergeOptions(LimelightImplementation.defaultOptions, options);
 
     this.isOpen = false;
 
-    this.events = {
-      open: new Event('open'),
-      close: new Event('close'),
-    };
-
+    this.on = this.on.bind(this);
+    this.open = this.open.bind(this);
+    this.refocus = this.refocus.bind(this);
     this.close = this.close.bind(this);
     this.reposition = this.reposition.bind(this);
     this.repositionLoop = this.repositionLoop.bind(this);
+    this.handleClick = this.handleClick.bind(this);
 
     this.init();
+
+    this.caches = {
+      targetQuery: {
+        elems: undefined,
+        result: undefined,
+      },
+    };
   }
 
   destroy() {
@@ -47,30 +59,28 @@ class Limelight {
   renderSVG() {
     return `
       <div class="limelight" id="${this.id}" aria-hidden>
-        <svg height="100%" width="100%">
-          <defs>
-            <mask id="${this.id}-mask">
-              <rect x="0" y="0" width="100%" height="100%" fill="white" />
-              ${this.elems.target.map((elem, i) => `
-                <rect class="${this.id}-window" id="${this.id}-window-${i}" x="0" y="0" width="0" height="0" fill="black" />
-              `).join('')}
-            </mask>
-          </defs>
-          <rect x="0" y="0" width="100%" height="100%" fill="black" opacity="0.8" style="mask: url('#${this.id}-mask'); pointer-events: none;" />
-        </svg> 
+        ${this.elems.target.map((elem, i) => `
+          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}"></div>
+        `).join('')}
       </div>
     `;
   }
 
-  reposition(animate = false) {
-    this.elems.maskWindows.forEach((mask, i) => {
+  reposition() {
+    this.emitter.trigger(new RepositionEvent());
 
+    this.elems.maskWindows.forEach((mask, i) => {
       const first = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
 
-      mask.setAttribute('x', first.left);
-      mask.setAttribute('y', first.top);
-      mask.setAttribute('width', first.width);
-      mask.setAttribute('height', first.height);
+      mask.style.left = `${first.left}px`;
+      mask.style.top = `${first.top}px`;
+      mask.style.width = `${first.width}px`;
+      mask.style.height = `${first.height}px`;
+
+      // mask.setAttribute('x', first.left);
+      // mask.setAttribute('y', first.top);
+      // mask.setAttribute('width', first.width);
+      // mask.setAttribute('height', first.height);
 
       const last = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
 
@@ -88,7 +98,6 @@ class Limelight {
 
       mask.style.transition = 'all 3s';
       mask.style.transform = '';
-        
     });
   }
 
@@ -121,7 +130,6 @@ class Limelight {
     document.body.appendChild(svgElem);
 
     this.reposition();
-    // this.bindListeners();
   }
 
   open(e) {
@@ -136,19 +144,39 @@ class Limelight {
 
     this.elems.limelight.classList.add(this.options.classes.activeClass);
 
-    this.broadcastEvent(this.events.open);
+    this.emitter.trigger(new OpenEvent());
 
     // If we don't encourage the listener to happen on next-tick,
     // we'll end up with the listener firing for this if it was triggered on-click.
     // This is safeguard for when the event is not passed in and thus propgation
     // can't be stopped.
     requestAnimationFrame(() => {
-      if (this.options.closeOnClick) {
-        document.addEventListener('click', this.close);
-      }
+      document.addEventListener('click', this.handleClick);
 
       this.loop = this.repositionLoop();
     });
+  }
+
+  get targetQuery() {
+    if (this.caches.targetQuery.elems !== this.elems.target) {
+      this.caches.targetQuery.elems = this.elems.target;
+
+      this.caches.targetQuery.result = this.elems.target.reduce((str, elem) => {
+        const id = elem.id ? `#${elem.id}` : '';
+        const classes = [...elem.classList].map(x => `.${x}`).join('');
+        return `${str} ${id}${classes}`;
+      }, '');
+    }
+
+    return this.caches.targetQuery.result;
+  }
+
+  handleClick(e) {
+    if (!this.options.closeOnClick) return;
+
+    if (!e.target.matches(this.targetQuery)) {
+      this.close();
+    }
   }
 
   close() {
@@ -158,38 +186,48 @@ class Limelight {
 
     this.elems.limelight.classList.remove(this.options.classes.activeClass);
 
-    this.broadcastEvent(this.events.close);
+    this.emitter.trigger(new CloseEvent());
 
-    document.removeEventListener('click', this.close);
+    document.removeEventListener('click', this.handleClick);
 
     cancelAnimationFrame(this.loop);
   }
 
-  broadcastEvent(event) {
-    [...this.elems.target, this.elems.limelight]
-      .forEach(elem => elem.dispatchEvent(event));
+  static trigger(eventInstance, target) {
+    target.dispatchEvent(eventInstance);
   }
 
   on(event, callback) {
-    this.elems.limelight.addEventListener(event, callback);
+    this.emitter.on(event, callback);
+    // this.elems.limelight.addEventListener(event, callback);
   }
 
   refocus(target) {
     this.elems.target = target.length > 1 ? Array.from(target) : [target];
-    this.reposition(true);
+    // cancelAnimationFrame(this.loop);
+    this.reposition();
   }
-
-  // bindListeners() {
-    // this.loop = requestAnimationFrame(this.repositionLoop);
-  // }
 }
 
-Limelight.defaultOptions = {
+LimelightImplementation.defaultOptions = {
   offset: 10,
   closeOnClick: true,
   classes: {
+    window: 'limelight__window',
     activeClass: 'limelight--is-active',
   },
 };
+
+const api = ['on', 'open', 'refocus'];
+
+class Limelight {
+  constructor(target, options = {}) {
+    const implementation = new LimelightImplementation(target, options);
+
+    api.forEach((prop) => {
+      this[prop] = implementation[prop];
+    });
+  }
+}
 
 export default Limelight;
