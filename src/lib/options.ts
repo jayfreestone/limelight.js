@@ -1,10 +1,3 @@
-/**
- * @typedef {object} Options
- * @property {number} [offset]
- * @property {boolean} [closeOnClick]
- * @property {object} [classes]
- */
-
 const options = {
   offset: 10,
   closeOnClick: true,
@@ -13,5 +6,13 @@ const options = {
     activeClass: 'limelight--is-active',
   },
 };
+
+export interface OptionsType {
+  offset?: number;
+  closeOnClick?: boolean;
+  classes?: {
+    activeClass?: string,
+  };
+}
 
 export default options;

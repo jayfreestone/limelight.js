@@ -1,25 +1,37 @@
 // @ts-check
 import u from '../utils';
-import defaultOptions from './options';
+import defaultOptions, { OptionsType } from './options';
 import CloseEvent from './events/types/CloseEvent';
 import OpenEvent from './events/types/OpenEvent';
 import RepositionEvent from './events/types/RepositionEvent';
 import EventEmitter from './events/EventEmitter';
 
-class Implementation {
-  /**
-   * @typedef {object} Options
-   * @property {number} [offset]
-   * @property {boolean} [closeOnClick]
-   * @property {object} [classes]
-   */
+type TargetType = HTMLElement|HTMLElement[];
 
-  /**
-   * @param {(HTMLElement[]|HTMLElement)} target
-   * @param {Options} options
-   */
-  constructor(target, options = {}) {
+class Implementation {
+  private id: string;
+  private emitter: any;
+  private topOffset: number;
+  private elems: {
+    target: HTMLElement[],
+    limelight: HTMLElement,
+    maskWindows: HTMLElement[],
+  };
+  private positions: any;
+  private options: OptionsType;
+  private isOpen: boolean;
+  private loop: undefined|number;
+  private caches: {
+    targetQuery: {
+      elems: undefined|TargetType,
+      result: undefined|string,
+    },
+  };
+
+  constructor(target: TargetType, options: OptionsType = {}) {
     this.id = 'clipElem';
+
+    this.loop = undefined;
 
     this.emitter = new EventEmitter();
 
@@ -54,17 +66,7 @@ class Implementation {
     };
   }
 
-  /**
-   * Destroys the instance and cleans up.
-   *
-   * @public
-   */
-  destroy() {
-    if (this.loop) cancelAnimationFrame(this.loop);
-    this.elems.limelight.parentNode.removeChild(this.elems.limelight);
-  }
-
-  createBGElem() {
+  private createBGElem() {
     const svgTemplate = this.renderSVG();
     return document.createRange().createContextualFragment(svgTemplate);
   }
@@ -73,7 +75,7 @@ class Implementation {
    * Creates a string that represents gradient stop points.
    * @return string
    */
-  renderSVG() {
+  private renderSVG() {
     return `
       <div class="limelight" id="${this.id}" aria-hidden>
         ${this.elems.target.map((elem, i) => `
@@ -84,9 +86,80 @@ class Implementation {
   }
 
   /**
-   * Resets the position on the windows.
+   * Takes a position object and adjusts it to accomodate optional offset.
    *
-   * @public
+   * @private
+   * @param {object} position - The result of getClientBoundingRect()
+   */
+  private calculateOffsets(position) {
+    const { offset } = this.options;
+    const {
+      left,
+      top,
+      width,
+      height,
+    } = position;
+
+    return {
+      left: left - offset,
+      top: top - offset,
+      width: width + (offset * 2),
+      height: height + (offset * 2),
+    };
+  }
+
+  private repositionLoop() {
+    if (this.topOffset !== window.pageYOffset) {
+      this.reposition();
+    }
+
+    this.topOffset = window.pageYOffset;
+
+    this.loop = requestAnimationFrame(this.repositionLoop);
+  }
+
+  private get targetQuery() {
+    if (this.caches.targetQuery.elems !== this.elems.target) {
+      this.caches.targetQuery.elems = this.elems.target;
+
+      this.caches.targetQuery.result = this.elems.target.reduce((str, elem) => {
+        const id = elem.id ? `#${elem.id}` : '';
+        const classes = [...Array.from(elem.classList)].map(x => `.${x}`).join('');
+        return `${str} ${id}${classes}`;
+      }, '');
+    }
+
+    return this.caches.targetQuery.result;
+  }
+
+  private handleClick(e) {
+    if (!this.options.closeOnClick) return;
+
+    if (!e.target.matches(this.targetQuery)) {
+      this.close();
+    }
+  }
+
+  private init() {
+    const svgElem = this.createBGElem();
+    this.elems.limelight = svgElem.querySelector(`#${this.id}`);
+    this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
+
+    document.body.appendChild(svgElem);
+
+    this.reposition();
+  }
+
+  /**
+   * Destroys the instance and cleans up.
+   */
+  destroy() {
+    if (this.loop) cancelAnimationFrame(this.loop);
+    this.elems.limelight.parentNode.removeChild(this.elems.limelight);
+  }
+
+  /**
+   * Resets the position on the windows.
    */
   reposition() {
     this.emitter.trigger(new RepositionEvent());
@@ -118,49 +191,6 @@ class Implementation {
     });
   }
 
-  /**
-   * Takes a position object and adjusts it to accomodate optional offset.
-   *
-   * @private
-   * @param {object} position - The result of getClientBoundingRect()
-   */
-  calculateOffsets(position) {
-    const { offset } = this.options;
-    const {
-      left,
-      top,
-      width,
-      height,
-    } = position;
-
-    return {
-      left: left - offset,
-      top: top - offset,
-      width: width + (offset * 2),
-      height: height + (offset * 2),
-    };
-  }
-
-  repositionLoop() {
-    if (this.topOffset !== window.pageYOffset) {
-      this.reposition();
-    }
-
-    this.topOffset = window.pageYOffset;
-
-    this.loop = requestAnimationFrame(this.repositionLoop);
-  }
-
-  init() {
-    const svgElem = this.createBGElem();
-    this.elems.limelight = svgElem.querySelector(`#${this.id}`);
-    this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
-
-    document.body.appendChild(svgElem);
-
-    this.reposition();
-  }
-
   open(e) {
     if (this.isOpen) return;
 
@@ -181,31 +211,8 @@ class Implementation {
     // can't be stopped.
     requestAnimationFrame(() => {
       document.addEventListener('click', this.handleClick);
-
-      this.loop = this.repositionLoop();
+      this.repositionLoop();
     });
-  }
-
-  get targetQuery() {
-    if (this.caches.targetQuery.elems !== this.elems.target) {
-      this.caches.targetQuery.elems = this.elems.target;
-
-      this.caches.targetQuery.result = this.elems.target.reduce((str, elem) => {
-        const id = elem.id ? `#${elem.id}` : '';
-        const classes = [...elem.classList].map(x => `.${x}`).join('');
-        return `${str} ${id}${classes}`;
-      }, '');
-    }
-
-    return this.caches.targetQuery.result;
-  }
-
-  handleClick(e) {
-    if (!this.options.closeOnClick) return;
-
-    if (!e.target.matches(this.targetQuery)) {
-      this.close();
-    }
   }
 
   close() {

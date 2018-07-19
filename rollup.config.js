@@ -1,27 +1,10 @@
-import babel from 'rollup-plugin-babel';
-import babelrc from 'babelrc-rollup';
+import commonjs from 'rollup-plugin-commonjs';
+import resolve from 'rollup-plugin-node-resolve';
+import typescript from 'rollup-plugin-typescript2';
 import browsersync from 'rollup-plugin-browsersync';
-
-const babelConfig = {
-  'presets': [
-    ['env', {
-      'targets': {
-        'browsers': ['last 2 versions']
-      },
-      'loose': true
-    }]
-  ]
-};
 
 export default {
   input: 'src/index.js',
-  plugins: [
-    babel(babelrc({
-      addExternalHelpersPlugin: false,
-      config: babelConfig,
-      exclude: 'node_modules/**'
-    }))
-  ],
   output: {
     file: 'dist/bundle.js',
     name: 'Limelight',
@@ -30,9 +13,16 @@ export default {
     extend: true,
   },
   plugins: [
+    resolve(),
+    commonjs({
+      include: 'node_modules/**',
+    }),
+    typescript({
+      abortOnError: false,
+    }),
     browsersync({
       server: '.',
       files: ['dist/**/*.*', 'src/styles/*.css', '*.html'],
-    })
+    }),
   ],
 };

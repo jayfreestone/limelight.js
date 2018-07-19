@@ -19,20 +19,13 @@
     mergeOptions,
   };
 
-  /**
-   * @typedef {object} Options
-   * @property {number} [offset]
-   * @property {boolean} [closeOnClick]
-   * @property {object} [classes]
-   */
-
-  const options = {
-    offset: 10,
-    closeOnClick: true,
-    classes: {
-      window: 'limelight__window',
-      activeClass: 'limelight--is-active',
-    },
+  var options = {
+      offset: 10,
+      closeOnClick: true,
+      classes: {
+          window: 'limelight__window',
+          activeClass: 'limelight--is-active'
+      }
   };
 
   /**
@@ -144,254 +137,192 @@
   }
 
   // @ts-check
-
-  class Implementation {
-    /**
-     * @typedef {object} Options
-     * @property {number} [offset]
-     * @property {boolean} [closeOnClick]
-     * @property {object} [classes]
-     */
-
-    /**
-     * @param {(HTMLElement[]|HTMLElement)} target
-     * @param {Options} options
-     */
-    constructor(target, options$$1 = {}) {
-      this.id = 'clipElem';
-
-      this.emitter = new EventEmitter();
-
-      this.topOffset = window.pageYOffset;
-
-      this.elems = {
-        // Handle querySelector or querySelectorAll
-        target: Array.isArray(target) ? Array.from(target) : [target],
+  var Implementation = /** @class */ (function () {
+      function Implementation(target, options$$1) {
+          if (options$$1 === void 0) { options$$1 = {}; }
+          this.id = 'clipElem';
+          this.loop = undefined;
+          this.emitter = new EventEmitter();
+          this.topOffset = window.pageYOffset;
+          this.elems = {
+              // Handle querySelector or querySelectorAll
+              target: Array.isArray(target) ? Array.from(target) : [target]
+          };
+          this.positions = [];
+          this.options = u.mergeOptions(options, options$$1);
+          this.isOpen = false;
+          this.on = this.on.bind(this);
+          this.open = this.open.bind(this);
+          this.refocus = this.refocus.bind(this);
+          this.close = this.close.bind(this);
+          this.reposition = this.reposition.bind(this);
+          this.repositionLoop = this.repositionLoop.bind(this);
+          this.handleClick = this.handleClick.bind(this);
+          this.init();
+          this.caches = {
+              targetQuery: {
+                  elems: undefined,
+                  result: undefined
+              }
+          };
+      }
+      Implementation.prototype.createBGElem = function () {
+          var svgTemplate = this.renderSVG();
+          return document.createRange().createContextualFragment(svgTemplate);
       };
-
-      this.positions = [];
-
-      this.options = u.mergeOptions(options, options$$1);
-
-      this.isOpen = false;
-
-      this.on = this.on.bind(this);
-      this.open = this.open.bind(this);
-      this.refocus = this.refocus.bind(this);
-      this.close = this.close.bind(this);
-      this.reposition = this.reposition.bind(this);
-      this.repositionLoop = this.repositionLoop.bind(this);
-      this.handleClick = this.handleClick.bind(this);
-
-      this.init();
-
-      this.caches = {
-        targetQuery: {
-          elems: undefined,
-          result: undefined,
-        },
+      /**
+       * Creates a string that represents gradient stop points.
+       * @return string
+       */
+      Implementation.prototype.renderSVG = function () {
+          var _this = this;
+          return "\n      <div class=\"limelight\" id=\"" + this.id + "\" aria-hidden>\n        " + this.elems.target.map(function (elem, i) { return "\n          <div class=\"" + _this.id + "-window limelight__window\" id=\"" + _this.id + "-window-" + i + "\"></div>\n        "; }).join('') + "\n      </div>\n    ";
       };
-    }
-
-    /**
-     * Destroys the instance and cleans up.
-     *
-     * @public
-     */
-    destroy() {
-      if (this.loop) cancelAnimationFrame(this.loop);
-      this.elems.limelight.parentNode.removeChild(this.elems.limelight);
-    }
-
-    createBGElem() {
-      const svgTemplate = this.renderSVG();
-      return document.createRange().createContextualFragment(svgTemplate);
-    }
-
-    /**
-     * Creates a string that represents gradient stop points.
-     * @return string
-     */
-    renderSVG() {
-      return `
-      <div class="limelight" id="${this.id}" aria-hidden>
-        ${this.elems.target.map((elem, i) => `
-          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}"></div>
-        `).join('')}
-      </div>
-    `;
-    }
-
-    /**
-     * Resets the position on the windows.
-     *
-     * @public
-     */
-    reposition() {
-      this.emitter.trigger(new RepositionEvent());
-
-      this.elems.maskWindows.forEach((mask, i) => {
-        const first = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
-
-        mask.style.left = `${first.left}px`;
-        mask.style.top = `${first.top}px`;
-        mask.style.width = `${first.width}px`;
-        mask.style.height = `${first.height}px`;
-
-        const last = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
-
-        // Invert: determine the delta between the 
-        // first and last bounds to invert the element
-        const deltaX = first.left - last.left;
-        const deltaY = first.top - last.top;
-        const deltaW = first.width / last.width;
-        const deltaH = first.height / last.height;
-
-        mask.style.transformOrigin = 'top left';
-        mask.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${deltaW}, ${deltaH})`;
-
-        this.elems.target[i].getBoundingClientRect();
-
-        mask.style.transition = 'all 3s';
-        mask.style.transform = '';
+      /**
+       * Takes a position object and adjusts it to accomodate optional offset.
+       *
+       * @private
+       * @param {object} position - The result of getClientBoundingRect()
+       */
+      Implementation.prototype.calculateOffsets = function (position) {
+          var offset = this.options.offset;
+          var left = position.left, top = position.top, width = position.width, height = position.height;
+          return {
+              left: left - offset,
+              top: top - offset,
+              width: width + (offset * 2),
+              height: height + (offset * 2)
+          };
+      };
+      Implementation.prototype.repositionLoop = function () {
+          if (this.topOffset !== window.pageYOffset) {
+              this.reposition();
+          }
+          this.topOffset = window.pageYOffset;
+          this.loop = requestAnimationFrame(this.repositionLoop);
+      };
+      Object.defineProperty(Implementation.prototype, "targetQuery", {
+          get: function () {
+              if (this.caches.targetQuery.elems !== this.elems.target) {
+                  this.caches.targetQuery.elems = this.elems.target;
+                  this.caches.targetQuery.result = this.elems.target.reduce(function (str, elem) {
+                      var id = elem.id ? "#" + elem.id : '';
+                      var classes = Array.from(elem.classList).slice().map(function (x) { return "." + x; }).join('');
+                      return str + " " + id + classes;
+                  }, '');
+              }
+              return this.caches.targetQuery.result;
+          },
+          enumerable: true,
+          configurable: true
       });
-    }
-
-    /**
-     * Takes a position object and adjusts it to accomodate optional offset.
-     *
-     * @private
-     * @param {object} position - The result of getClientBoundingRect()
-     */
-    calculateOffsets(position) {
-      const { offset } = this.options;
-      const {
-        left,
-        top,
-        width,
-        height,
-      } = position;
-
-      return {
-        left: left - offset,
-        top: top - offset,
-        width: width + (offset * 2),
-        height: height + (offset * 2),
+      Implementation.prototype.handleClick = function (e) {
+          if (!this.options.closeOnClick)
+              return;
+          if (!e.target.matches(this.targetQuery)) {
+              this.close();
+          }
       };
-    }
-
-    repositionLoop() {
-      if (this.topOffset !== window.pageYOffset) {
-        this.reposition();
-      }
-
-      this.topOffset = window.pageYOffset;
-
-      this.loop = requestAnimationFrame(this.repositionLoop);
-    }
-
-    init() {
-      const svgElem = this.createBGElem();
-      this.elems.limelight = svgElem.querySelector(`#${this.id}`);
-      this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
-
-      document.body.appendChild(svgElem);
-
-      this.reposition();
-    }
-
-    open(e) {
-      if (this.isOpen) return;
-
-      this.isOpen = true;
-
-      // If it looks like an event, try to stop it bubbling.
-      if (e && e.target) {
-        e.stopPropagation();
-      }
-
-      this.elems.limelight.classList.add(this.options.classes.activeClass);
-
-      this.emitter.trigger(new OpenEvent());
-
-      // If we don't encourage the listener to happen on next-tick,
-      // we'll end up with the listener firing for this if it was triggered on-click.
-      // This is safeguard for when the event is not passed in and thus propgation
-      // can't be stopped.
-      requestAnimationFrame(() => {
-        document.addEventListener('click', this.handleClick);
-
-        this.loop = this.repositionLoop();
-      });
-    }
-
-    get targetQuery() {
-      if (this.caches.targetQuery.elems !== this.elems.target) {
-        this.caches.targetQuery.elems = this.elems.target;
-
-        this.caches.targetQuery.result = this.elems.target.reduce((str, elem) => {
-          const id = elem.id ? `#${elem.id}` : '';
-          const classes = [...elem.classList].map(x => `.${x}`).join('');
-          return `${str} ${id}${classes}`;
-        }, '');
-      }
-
-      return this.caches.targetQuery.result;
-    }
-
-    handleClick(e) {
-      if (!this.options.closeOnClick) return;
-
-      if (!e.target.matches(this.targetQuery)) {
-        this.close();
-      }
-    }
-
-    close() {
-      if (!this.isOpen) return;
-
-      this.isOpen = false;
-
-      this.elems.limelight.classList.remove(this.options.classes.activeClass);
-
-      this.emitter.trigger(new CloseEvent());
-
-      document.removeEventListener('click', this.handleClick);
-
-      cancelAnimationFrame(this.loop);
-    }
-
-    /**
-     * Passes through the event to the emitter.
-     *
-     * @public
-     * @param {GenericEvent} event
-     * @param {function} callback
-     */
-    on(event, callback) {
-      this.emitter.on(event, callback);
-    }
-
-    refocus(target) {
-      this.elems.target = target.length > 1 ? Array.from(target) : [target];
-      // cancelAnimationFrame(this.loop);
-      this.reposition();
-    }
-  }
+      Implementation.prototype.init = function () {
+          var svgElem = this.createBGElem();
+          this.elems.limelight = svgElem.querySelector("#" + this.id);
+          this.elems.maskWindows = Array.from(svgElem.querySelectorAll("." + this.id + "-window"));
+          document.body.appendChild(svgElem);
+          this.reposition();
+      };
+      /**
+       * Destroys the instance and cleans up.
+       */
+      Implementation.prototype.destroy = function () {
+          if (this.loop)
+              cancelAnimationFrame(this.loop);
+          this.elems.limelight.parentNode.removeChild(this.elems.limelight);
+      };
+      /**
+       * Resets the position on the windows.
+       */
+      Implementation.prototype.reposition = function () {
+          var _this = this;
+          this.emitter.trigger(new RepositionEvent());
+          this.elems.maskWindows.forEach(function (mask, i) {
+              var first = _this.calculateOffsets(_this.elems.target[i].getBoundingClientRect());
+              mask.style.left = first.left + "px";
+              mask.style.top = first.top + "px";
+              mask.style.width = first.width + "px";
+              mask.style.height = first.height + "px";
+              var last = _this.calculateOffsets(_this.elems.target[i].getBoundingClientRect());
+              // Invert: determine the delta between the 
+              // first and last bounds to invert the element
+              var deltaX = first.left - last.left;
+              var deltaY = first.top - last.top;
+              var deltaW = first.width / last.width;
+              var deltaH = first.height / last.height;
+              mask.style.transformOrigin = 'top left';
+              mask.style.transform = "translate(" + deltaX + "px, " + deltaY + "px) scale(" + deltaW + ", " + deltaH + ")";
+              _this.elems.target[i].getBoundingClientRect();
+              mask.style.transition = 'all 3s';
+              mask.style.transform = '';
+          });
+      };
+      Implementation.prototype.open = function (e) {
+          var _this = this;
+          if (this.isOpen)
+              return;
+          this.isOpen = true;
+          // If it looks like an event, try to stop it bubbling.
+          if (e && e.target) {
+              e.stopPropagation();
+          }
+          this.elems.limelight.classList.add(this.options.classes.activeClass);
+          this.emitter.trigger(new OpenEvent());
+          // If we don't encourage the listener to happen on next-tick,
+          // we'll end up with the listener firing for this if it was triggered on-click.
+          // This is safeguard for when the event is not passed in and thus propgation
+          // can't be stopped.
+          requestAnimationFrame(function () {
+              document.addEventListener('click', _this.handleClick);
+              _this.repositionLoop();
+          });
+      };
+      Implementation.prototype.close = function () {
+          if (!this.isOpen)
+              return;
+          this.isOpen = false;
+          this.elems.limelight.classList.remove(this.options.classes.activeClass);
+          this.emitter.trigger(new CloseEvent());
+          document.removeEventListener('click', this.handleClick);
+          cancelAnimationFrame(this.loop);
+      };
+      /**
+       * Passes through the event to the emitter.
+       *
+       * @public
+       * @param {GenericEvent} event
+       * @param {function} callback
+       */
+      Implementation.prototype.on = function (event, callback) {
+          this.emitter.on(event, callback);
+      };
+      Implementation.prototype.refocus = function (target) {
+          this.elems.target = target.length > 1 ? Array.from(target) : [target];
+          // cancelAnimationFrame(this.loop);
+          this.reposition();
+      };
+      return Implementation;
+  }());
 
   // @ts-check
-
-  const publicAPI = ['on', 'open', 'refocus', 'destroy', 'reposition'];
-
-  class Limelight {
-    constructor(target, options) {
-      const implementation = new Implementation(target, options);
-
-      publicAPI.forEach((prop) => {
-        this[prop] = implementation[prop];
-      });
-    }
-  }
+  var publicAPI = ['on', 'open', 'refocus', 'destroy', 'reposition'];
+  var Limelight = /** @class */ (function () {
+      function Limelight(target, options) {
+          var _this = this;
+          var implementation = new Implementation(target, options);
+          publicAPI.forEach(function (prop) {
+              _this[prop] = implementation[prop];
+          });
+      }
+      return Limelight;
+  }());
 
   // document.addEventListener('DOMContentLoaded', () => {
   //   // const targets = document.querySelectorAll('.box__thing');
