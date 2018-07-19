@@ -5,5 +5,6 @@ document.addEventListener('DOMContentLoaded', function demoInit() {
   trigger.addEventListener('click', function() {
     const inst = new Limelight(document.querySelector('.box'));
     inst.open();
+    console.log(inst);
   });
 });

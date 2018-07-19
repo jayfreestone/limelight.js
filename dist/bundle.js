@@ -20,6 +20,22 @@
   };
 
   /**
+   * @typedef {object} Options
+   * @property {number} [offset]
+   * @property {boolean} [closeOnClick]
+   * @property {object} [classes]
+   */
+
+  const options = {
+    offset: 10,
+    closeOnClick: true,
+    classes: {
+      window: 'limelight__window',
+      activeClass: 'limelight--is-active',
+    },
+  };
+
+  /**
    * The base 'event' class used by an EventEmitter.
    *
    * @class GenericEvent
@@ -129,8 +145,19 @@
 
   // @ts-check
 
-  class LimelightImplementation {
-    constructor(target, options = {}) {
+  class Implementation {
+    /**
+     * @typedef {object} Options
+     * @property {number} [offset]
+     * @property {boolean} [closeOnClick]
+     * @property {object} [classes]
+     */
+
+    /**
+     * @param {(HTMLElement[]|HTMLElement)} target
+     * @param {Options} options
+     */
+    constructor(target, options$$1 = {}) {
       this.id = 'clipElem';
 
       this.emitter = new EventEmitter();
@@ -139,12 +166,12 @@
 
       this.elems = {
         // Handle querySelector or querySelectorAll
-        target: target.length > 1 ? Array.from(target) : [target],
+        target: Array.isArray(target) ? Array.from(target) : [target],
       };
 
       this.positions = [];
 
-      this.options = u.mergeOptions(LimelightImplementation.defaultOptions, options);
+      this.options = u.mergeOptions(options, options$$1);
 
       this.isOpen = false;
 
@@ -166,6 +193,11 @@
       };
     }
 
+    /**
+     * Destroys the instance and cleans up.
+     *
+     * @public
+     */
     destroy() {
       if (this.loop) cancelAnimationFrame(this.loop);
       this.elems.limelight.parentNode.removeChild(this.elems.limelight);
@@ -190,6 +222,11 @@
     `;
     }
 
+    /**
+     * Resets the position on the windows.
+     *
+     * @public
+     */
     reposition() {
       this.emitter.trigger(new RepositionEvent());
 
@@ -200,11 +237,6 @@
         mask.style.top = `${first.top}px`;
         mask.style.width = `${first.width}px`;
         mask.style.height = `${first.height}px`;
-
-        // mask.setAttribute('x', first.left);
-        // mask.setAttribute('y', first.top);
-        // mask.setAttribute('width', first.width);
-        // mask.setAttribute('height', first.height);
 
         const last = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
 
@@ -225,8 +257,20 @@
       });
     }
 
-    calculateOffsets({ left, top, width, height }) {
+    /**
+     * Takes a position object and adjusts it to accomodate optional offset.
+     *
+     * @private
+     * @param {object} position - The result of getClientBoundingRect()
+     */
+    calculateOffsets(position) {
       const { offset } = this.options;
+      const {
+        left,
+        top,
+        width,
+        height,
+      } = position;
 
       return {
         left: left - offset,
@@ -317,13 +361,15 @@
       cancelAnimationFrame(this.loop);
     }
 
-    static trigger(eventInstance, target) {
-      target.dispatchEvent(eventInstance);
-    }
-
+    /**
+     * Passes through the event to the emitter.
+     *
+     * @public
+     * @param {GenericEvent} event
+     * @param {function} callback
+     */
     on(event, callback) {
       this.emitter.on(event, callback);
-      // this.elems.limelight.addEventListener(event, callback);
     }
 
     refocus(target) {
@@ -333,22 +379,15 @@
     }
   }
 
-  LimelightImplementation.defaultOptions = {
-    offset: 10,
-    closeOnClick: true,
-    classes: {
-      window: 'limelight__window',
-      activeClass: 'limelight--is-active',
-    },
-  };
+  // @ts-check
 
-  const api = ['on', 'open', 'refocus'];
+  const publicAPI = ['on', 'open', 'refocus', 'destroy', 'reposition'];
 
   class Limelight {
-    constructor(target, options = {}) {
-      const implementation = new LimelightImplementation(target, options);
+    constructor(target, options) {
+      const implementation = new Implementation(target, options);
 
-      api.forEach((prop) => {
+      publicAPI.forEach((prop) => {
         this[prop] = implementation[prop];
       });
     }
