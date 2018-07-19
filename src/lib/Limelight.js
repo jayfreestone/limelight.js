@@ -1,11 +1,16 @@
 // @ts-check
 import u from '../utils';
+import options as defaultOptions from './options';
 import CloseEvent from './events/types/CloseEvent';
 import OpenEvent from './events/types/OpenEvent';
 import RepositionEvent from './events/types/RepositionEvent';
 import EventEmitter from './events/EventEmitter';
 
 class LimelightImplementation {
+  /**
+   * @param {HTMLElement} target 
+   * @param {Options} options 
+   */
   constructor(target, options = {}) {
     this.id = 'clipElem';
 
@@ -20,7 +25,7 @@ class LimelightImplementation {
 
     this.positions = [];
 
-    this.options = u.mergeOptions(LimelightImplementation.defaultOptions, options);
+    this.options = u.mergeOptions(defaultOptions, options);
 
     this.isOpen = false;
 
@@ -208,15 +213,6 @@ class LimelightImplementation {
     this.reposition();
   }
 }
-
-LimelightImplementation.defaultOptions = {
-  offset: 10,
-  closeOnClick: true,
-  classes: {
-    window: 'limelight__window',
-    activeClass: 'limelight--is-active',
-  },
-};
 
 const api = ['on', 'open', 'refocus'];
 
