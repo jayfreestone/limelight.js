@@ -91,6 +91,11 @@ button,
     justify-content: center; 
 }
 
+.intro__logo {
+    display: block;
+    margin-bottom: 1em;
+}
+
 .intro__title {
     margin: 0;
     text-transform: uppercase;
