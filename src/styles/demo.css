@@ -37,6 +37,10 @@ body {
     margin-bottom: 1em;
 }
 
+.hide {
+    display: none;
+}
+
 button,
 .btn {
     --t-btn-background: whitesmoke;

@@ -1,5 +1,6 @@
 // @ts-check
 import u from '../utils';
+import _throttle from 'lodash/throttle';
 import defaultOptions, { OptionsType } from './options';
 import CloseEvent from './events/types/CloseEvent';
 import OpenEvent from './events/types/OpenEvent';
@@ -11,7 +12,7 @@ import TargetType from './typedefs/TargetType';
 
 class Implementation {
   private id: string;
-  private emitter: any;
+  private emitter: EventEmitter;
   private topOffset: number;
   private elems: {
     target: HTMLElement[],
@@ -23,6 +24,10 @@ class Implementation {
   private isOpen: boolean;
   private loop: undefined|number;
   private caches: {
+    targetSize: {
+      elems: undefined|TargetType,
+      result: undefined|object[],
+    },
     targetQuery: {
       elems: undefined|TargetType,
       result: undefined|string,
@@ -50,6 +55,10 @@ class Implementation {
     this.isOpen = false;
 
     this.caches = {
+      targetSize: {
+        elems: undefined,
+        result: [],
+      },
       targetQuery: {
         elems: undefined,
         result: undefined,
@@ -60,22 +69,24 @@ class Implementation {
     this.open = this.open.bind(this);
     this.refocus = this.refocus.bind(this);
     this.close = this.close.bind(this);
-    this.reposition = this.reposition.bind(this);
+    this.reposition = _throttle(this.reposition, 200).bind(this);
     this.repositionLoop = this.repositionLoop.bind(this);
     this.handleClick = this.handleClick.bind(this);
 
     this.init();
   }
 
+  /**
+   * Create an Document Fragment based on an overlay string
+   */
   private createBGElem(): DocumentFragment {
-    const svgTemplate = this.renderSVG();
-    return document.createRange().createContextualFragment(svgTemplate);
+    return document.createRange().createContextualFragment(this.renderOverlay());
   }
 
   /**
    * Creates a string that represents gradient stop points.
    */
-  private renderSVG(): string {
+  private renderOverlay(): string {
     return `
       <div class="limelight" id="${this.id}" aria-hidden>
         ${this.elems.target.map((elem, i) => `
@@ -107,30 +118,58 @@ class Implementation {
     };
   }
 
+  /**
+   * A RAF loop that re-runs reposition if the scroll position has changed.
+   *
+   * @todo Re-add some kind of caching? 
+   */
   private repositionLoop() {
-    if (this.topOffset !== window.pageYOffset) {
-      this.reposition();
-    }
+    // const sizes = this.elems.target.map(target => ({
+    //   width: target.offsetWidth,
+    //   height: target.offsetHeight,
+    // }));
 
-    this.topOffset = window.pageYOffset;
+    // const hasChanged = sizes.some((size, i) => (
+    //   size.width !== this.caches.targetSize.result[i].width
+    //   || size.height !== this.caches.targetSize.result[i].height
+    // ));
+
+    // if (this.topOffset !== window.pageYOffset || hasChanged) {
+    //   this.reposition();
+    // }
+
+    // if (this.topOffset !== window.pageYOffset) {
+    this.reposition();
+    // }
+
+    // this.topOffset = window.pageYOffset;
+    // this.caches.targetSize.result = sizes;
 
     this.loop = requestAnimationFrame(this.repositionLoop);
   }
 
-  private get targetQuery() {
+  /**
+   * Extracts classes/ids from target elements to create a css selector.
+   */
+  private get targetQuery(): string {
     if (this.caches.targetQuery.elems !== this.elems.target) {
       this.caches.targetQuery.elems = this.elems.target;
 
       this.caches.targetQuery.result = this.elems.target.reduce((str, elem) => {
         const id = elem.id ? `#${elem.id}` : '';
         const classes = [...Array.from(elem.classList)].map(x => `.${x}`).join('');
-        return `${str} ${id}${classes}`;
+        const targetStr = `${id}${classes}`;
+        // @todo Check this with multiple targets
+        return `${str} ${targetStr}, ${targetStr} *`;
       }, '');
     }
 
     return this.caches.targetQuery.result;
   }
 
+  /**
+   * Closes the overlay if the click happens outside of one of the target elements.
+   */
   private handleClick(e: MouseEvent) {
     if (!this.options.closeOnClick) return;
 
@@ -139,6 +178,9 @@ class Implementation {
     }
   }
 
+  /**
+   * Runs setup.
+   */
   private init() {
     const svgElem = this.createBGElem();
     this.elems.limelight = svgElem.querySelector(`#${this.id}`);
@@ -161,7 +203,7 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
-    this.emitter.trigger(new RepositionEvent());
+    // this.emitter.trigger(new RepositionEvent());
 
     this.elems.maskWindows.forEach((mask, i) => {
       const first = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
@@ -190,6 +232,9 @@ class Implementation {
     });
   }
 
+  /**
+   * Open the overlay.
+   */
   open(e: MouseEvent) {
     if (this.isOpen) return;
 
@@ -214,6 +259,9 @@ class Implementation {
     });
   }
 
+  /**
+   * Close the overlay.
+   */
   close() {
     if (!this.isOpen) return;
 
@@ -235,6 +283,9 @@ class Implementation {
     this.emitter.on(event, callback);
   }
 
+  /**
+   * Change the window focus to a different element/set of elements.
+   */
   refocus(target: TargetType) {
     this.elems.target = Array.isArray(target) ? Array.from(target) : [target];
     this.reposition();
