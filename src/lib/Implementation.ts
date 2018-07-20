@@ -5,8 +5,9 @@ import CloseEvent from './events/types/CloseEvent';
 import OpenEvent from './events/types/OpenEvent';
 import RepositionEvent from './events/types/RepositionEvent';
 import EventEmitter from './events/EventEmitter';
-
-type TargetType = HTMLElement|HTMLElement[];
+import GenericEvent from './events/types/GenericEvent';
+import BoundingBoxType from './typedefs/BoundingBoxType';
+import TargetType from './typedefs/TargetType';
 
 class Implementation {
   private id: string;
@@ -48,6 +49,13 @@ class Implementation {
 
     this.isOpen = false;
 
+    this.caches = {
+      targetQuery: {
+        elems: undefined,
+        result: undefined,
+      },
+    };
+
     this.on = this.on.bind(this);
     this.open = this.open.bind(this);
     this.refocus = this.refocus.bind(this);
@@ -57,25 +65,17 @@ class Implementation {
     this.handleClick = this.handleClick.bind(this);
 
     this.init();
-
-    this.caches = {
-      targetQuery: {
-        elems: undefined,
-        result: undefined,
-      },
-    };
   }
 
-  private createBGElem() {
+  private createBGElem(): DocumentFragment {
     const svgTemplate = this.renderSVG();
     return document.createRange().createContextualFragment(svgTemplate);
   }
 
   /**
    * Creates a string that represents gradient stop points.
-   * @return string
    */
-  private renderSVG() {
+  private renderSVG(): string {
     return `
       <div class="limelight" id="${this.id}" aria-hidden>
         ${this.elems.target.map((elem, i) => `
@@ -88,10 +88,9 @@ class Implementation {
   /**
    * Takes a position object and adjusts it to accomodate optional offset.
    *
-   * @private
-   * @param {object} position - The result of getClientBoundingRect()
+   * @param position - The result of getClientBoundingRect()
    */
-  private calculateOffsets(position) {
+  private calculateOffsets(position: BoundingBoxType) {
     const { offset } = this.options;
     const {
       left,
@@ -132,7 +131,7 @@ class Implementation {
     return this.caches.targetQuery.result;
   }
 
-  private handleClick(e) {
+  private handleClick(e: MouseEvent) {
     if (!this.options.closeOnClick) return;
 
     if (!e.target.matches(this.targetQuery)) {
@@ -191,7 +190,7 @@ class Implementation {
     });
   }
 
-  open(e) {
+  open(e: MouseEvent) {
     if (this.isOpen) return;
 
     this.isOpen = true;
@@ -231,18 +230,13 @@ class Implementation {
 
   /**
    * Passes through the event to the emitter.
-   *
-   * @public
-   * @param {GenericEvent} event
-   * @param {function} callback
    */
-  on(event, callback) {
+  on(event: GenericEvent, callback: Function) {
     this.emitter.on(event, callback);
   }
 
-  refocus(target) {
-    this.elems.target = target.length > 1 ? Array.from(target) : [target];
-    // cancelAnimationFrame(this.loop);
+  refocus(target: TargetType) {
+    this.elems.target = Array.isArray(target) ? Array.from(target) : [target];
     this.reposition();
   }
 }

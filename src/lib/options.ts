@@ -1,4 +1,4 @@
-const options = {
+const options: OptionsType = {
   offset: 10,
   closeOnClick: true,
   classes: {
@@ -11,6 +11,7 @@ export interface OptionsType {
   offset?: number;
   closeOnClick?: boolean;
   classes?: {
+    window?: string,
     activeClass?: string,
   };
 }

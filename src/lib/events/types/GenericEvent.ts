@@ -1,22 +1,20 @@
 /**
  * The base 'event' class used by an EventEmitter.
- *
- * @class GenericEvent
  */
 class GenericEvent {
+  private eventType: string;
+  private payload: object;
+
   /**
-   * @param {string} eventType - The 'type' that will be listened for.
-   * @param {object} payload - Any additional data.
+   * @param eventType - The 'type' that will be listened for.
+   * @param payload - Any additional data.
    */
-  constructor(eventType, payload = {}) {
-    this.type = eventType;
+  constructor(eventType: string, payload: object = {}) {
+    this.eventType = eventType;
     this.payload = payload;
   }
 
-  /**
-   * @param {string} eventType
-   */
-  set type(eventType) {
+  set type(eventType: string) {
     // Do not allow re-assignment
     if (this.eventType) return;
     this.eventType = eventType;
