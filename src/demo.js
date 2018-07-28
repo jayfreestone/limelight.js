@@ -1,23 +1,27 @@
-document.addEventListener('DOMContentLoaded', function demoInit() {
+document.addEventListener("DOMContentLoaded", function demoInit() {
   (() => {
-    var demoBasic = document.querySelector('.js-demo-basic');
-    var trigger = demoBasic.querySelector('.js-demo-basic__trigger');
+    var demoBasic = document.querySelector(".js-demo-basic");
+    var trigger = demoBasic.querySelector(".js-demo-basic__trigger");
+    const inst = new Limelight(
+      document.querySelector(".js-demo-basic__target")
+    );
 
-    trigger.addEventListener('click', function () {
-      const inst = new Limelight(document.querySelector('.box'));
+    trigger.addEventListener("click", function(e) {
+      e.preventDefault();
+
       inst.open();
-      console.log(inst);
     });
-  })()
+  })();
 
-  var demoAutoAdjust = document.querySelector('.js-demo-auto-adjust');
-  var trigger = demoAutoAdjust.querySelector('.js-demo-auto-adjust__trigger');
+  var demoAutoAdjust = document.querySelector(".js-demo-auto-adjust");
+  var trigger = demoAutoAdjust.querySelector(".js-demo-auto-adjust__trigger");
+  const inst = new Limelight(
+    document.querySelector(".js-demo-auto-adjust__target")
+  );
 
-  trigger.addEventListener('click', function (e) {
+  trigger.addEventListener("click", function(e) {
     e.preventDefault();
 
-    const inst = new Limelight(document.querySelector('.js-demo-auto-adjust__target'));
     inst.open();
-    console.log(inst);
   });
 });

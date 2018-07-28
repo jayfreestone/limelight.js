@@ -29,6 +29,10 @@
             visibility: visible;
         }
 
+        .limelight--is-active .limelight__window {
+            transition: all 3s;
+        }
+
         .limelight__window {
             background-color: grey;
             position: absolute;
@@ -78,7 +82,7 @@
                     <button class="js-demo-basic__trigger push-bottom">
                         Shine on
                     </button>
-                    <div class="box">
+                    <div class="js-demo-basic__target box">
                         A generic box full of great content.
                     </div>
                 </div>

@@ -1,10 +1,7 @@
-// @ts-check
 import u from '../utils';
-import _throttle from 'lodash/throttle';
 import defaultOptions, { OptionsType } from './options';
 import CloseEvent from './events/types/CloseEvent';
 import OpenEvent from './events/types/OpenEvent';
-import RepositionEvent from './events/types/RepositionEvent';
 import EventEmitter from './events/EventEmitter';
 import GenericEvent from './events/types/GenericEvent';
 import BoundingBoxType from './typedefs/BoundingBoxType';
@@ -46,6 +43,8 @@ class Implementation {
     this.elems = {
       // Handle querySelector or querySelectorAll
       target: Array.isArray(target) ? Array.from(target) : [target],
+      limelight: undefined,
+      maskWindows: undefined,
     };
 
     this.positions = [];
@@ -69,7 +68,7 @@ class Implementation {
     this.open = this.open.bind(this);
     this.refocus = this.refocus.bind(this);
     this.close = this.close.bind(this);
-    this.reposition = _throttle(this.reposition, 200).bind(this);
+    this.reposition = this.reposition.bind(this);
     this.repositionLoop = this.repositionLoop.bind(this);
     this.handleClick = this.handleClick.bind(this);
 
@@ -124,27 +123,7 @@ class Implementation {
    * @todo Re-add some kind of caching? 
    */
   private repositionLoop() {
-    // const sizes = this.elems.target.map(target => ({
-    //   width: target.offsetWidth,
-    //   height: target.offsetHeight,
-    // }));
-
-    // const hasChanged = sizes.some((size, i) => (
-    //   size.width !== this.caches.targetSize.result[i].width
-    //   || size.height !== this.caches.targetSize.result[i].height
-    // ));
-
-    // if (this.topOffset !== window.pageYOffset || hasChanged) {
-    //   this.reposition();
-    // }
-
-    // if (this.topOffset !== window.pageYOffset) {
     this.reposition();
-    // }
-
-    // this.topOffset = window.pageYOffset;
-    // this.caches.targetSize.result = sizes;
-
     this.loop = requestAnimationFrame(this.repositionLoop);
   }
 
@@ -203,8 +182,6 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
-    // this.emitter.trigger(new RepositionEvent());
-
     this.elems.maskWindows.forEach((mask, i) => {
       const first = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
 
@@ -227,7 +204,6 @@ class Implementation {
 
       this.elems.target[i].getBoundingClientRect();
 
-      mask.style.transition = 'all 3s';
       mask.style.transform = '';
     });
   }
@@ -245,8 +221,6 @@ class Implementation {
       e.stopPropagation();
     }
 
-    this.elems.limelight.classList.add(this.options.classes.activeClass);
-
     this.emitter.trigger(new OpenEvent());
 
     // If we don't encourage the listener to happen on next-tick,
@@ -256,6 +230,7 @@ class Implementation {
     requestAnimationFrame(() => {
       document.addEventListener('click', this.handleClick);
       this.repositionLoop();
+      this.elems.limelight.classList.add(this.options.classes.activeClass);
     });
   }
 
