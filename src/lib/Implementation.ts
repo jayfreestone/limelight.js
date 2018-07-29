@@ -1,3 +1,4 @@
+import _throttle from 'lodash/throttle';
 import u from '../utils';
 import defaultOptions, { OptionsType } from './options';
 import CloseEvent from './events/types/CloseEvent';
@@ -20,6 +21,7 @@ class Implementation {
   private options: OptionsType;
   private isOpen: boolean;
   private loop: undefined|number;
+  private observer: MutationObserver;
   private caches: {
     targetSize: {
       elems: undefined|TargetType,
@@ -68,9 +70,11 @@ class Implementation {
     this.open = this.open.bind(this);
     this.refocus = this.refocus.bind(this);
     this.close = this.close.bind(this);
-    this.reposition = this.reposition.bind(this);
+    this.reposition = _throttle(this.reposition.bind(this), 300);
     this.repositionLoop = this.repositionLoop.bind(this);
     this.handleClick = this.handleClick.bind(this);
+
+    this.observer = new MutationObserver(this.mutationCallback.bind(this));
 
     this.init();
   }
@@ -158,6 +162,39 @@ class Implementation {
   }
 
   /**
+   * MutationObserver callback.
+   */
+  private mutationCallback(mutations: MutationEvent[]) {
+    mutations.forEach(mutation => {
+      // Check if the mutation is one we caused ourselves.
+      if (!this.elems.maskWindows.find(target => target === mutation.target)) {
+        this.reposition();
+      } 
+    });
+  }
+
+  /**
+   * Enables/disables event listeners.
+   */
+  private listeners(enable = true) {
+    if (enable) {
+      this.observer.observe(document, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+      });
+
+      window.addEventListener('resize', this.reposition);
+      window.addEventListener('scroll', this.reposition);
+    } else {
+      this.observer.disconnect();
+
+      window.removeEventListener('resize', this.reposition);
+      window.removeEventListener('scroll', this.reposition);
+    }
+  }
+
+  /**
    * Runs setup.
    */
   private init() {
@@ -182,6 +219,7 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
+    console.log('reposition');
     this.elems.maskWindows.forEach((mask, i) => {
       const first = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
 
@@ -229,8 +267,10 @@ class Implementation {
     // can't be stopped.
     requestAnimationFrame(() => {
       document.addEventListener('click', this.handleClick);
-      this.repositionLoop();
+      // this.repositionLoop();
+      this.reposition();
       this.elems.limelight.classList.add(this.options.classes.activeClass);
+      this.listeners();
     });
   }
 
@@ -249,6 +289,8 @@ class Implementation {
     document.removeEventListener('click', this.handleClick);
 
     cancelAnimationFrame(this.loop);
+
+    this.listeners(false);
   }
 
   /**

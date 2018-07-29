@@ -23,5 +23,9 @@ document.addEventListener("DOMContentLoaded", function demoInit() {
     e.preventDefault();
 
     inst.open();
+
+    setTimeout(() => {
+      document.querySelector('.intro').style.minHeight = '10vh';
+    }, 3000);
   });
 });
