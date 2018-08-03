@@ -29,13 +29,16 @@
             visibility: visible;
         }
 
-        .limelight--is-active .limelight__window {
-            transition: all 3s;
-        }
-
         .limelight__window {
             background-color: grey;
             position: absolute;
+            transform-origin: top left;
+            width: 1px;
+            height: 1px;
+        }
+
+        .limelight--is-refocusing {
+            transition: transform 2s;
         }
     </style>
 </head>
@@ -50,7 +53,7 @@
                     <a class="btn" href="https://github.com/jayfreestone/limelight.js" target="_blank" rel="noopener noreferrer">
                         <img src="/src/img/github-mark.svg" alt="">
                         Github
-                    </button>
+                    </a>
                     <a class="btn btn--primary" href="#demos">
                         Demos
                     </a>

@@ -1,4 +1,3 @@
-import _throttle from 'lodash/throttle';
 import u from '../utils';
 import defaultOptions, { OptionsType } from './options';
 import CloseEvent from './events/types/CloseEvent';
@@ -8,25 +7,25 @@ import GenericEvent from './events/types/GenericEvent';
 import BoundingBoxType from './typedefs/BoundingBoxType';
 import TargetType from './typedefs/TargetType';
 
+/**
+ * Main library class.
+ */
 class Implementation {
-  private id: string;
+  private readonly id: string;
   private emitter: EventEmitter;
-  private topOffset: number;
+  // References to DOM elements
   private elems: {
+    // The passed in target to highlight
     target: HTMLElement[],
+    // The lib wrapper element
     limelight: HTMLElement,
+    // The transparent 'holes' in the overlay
     maskWindows: HTMLElement[],
   };
-  private positions: any;
-  private options: OptionsType;
+  private readonly options: OptionsType;
   private isOpen: boolean;
   private loop: undefined|number;
-  private observer: MutationObserver;
   private caches: {
-    targetSize: {
-      elems: undefined|TargetType,
-      result: undefined|object[],
-    },
     targetQuery: {
       elems: undefined|TargetType,
       result: undefined|string,
@@ -34,13 +33,12 @@ class Implementation {
   };
 
   constructor(target: TargetType, options: OptionsType = {}) {
-    this.id = 'clipElem';
+    this.id = `clipElem-${u.uid()}`;
 
     this.loop = undefined;
 
     this.emitter = new EventEmitter();
 
-    this.topOffset = window.pageYOffset;
 
     this.elems = {
       // Handle querySelector or querySelectorAll
@@ -49,17 +47,11 @@ class Implementation {
       maskWindows: undefined,
     };
 
-    this.positions = [];
-
     this.options = u.mergeOptions(defaultOptions, options);
 
     this.isOpen = false;
 
     this.caches = {
-      targetSize: {
-        elems: undefined,
-        result: [],
-      },
       targetQuery: {
         elems: undefined,
         result: undefined,
@@ -70,11 +62,9 @@ class Implementation {
     this.open = this.open.bind(this);
     this.refocus = this.refocus.bind(this);
     this.close = this.close.bind(this);
-    this.reposition = _throttle(this.reposition.bind(this), 300);
+    this.reposition = this.reposition.bind(this);
     this.repositionLoop = this.repositionLoop.bind(this);
     this.handleClick = this.handleClick.bind(this);
-
-    this.observer = new MutationObserver(this.mutationCallback.bind(this));
 
     this.init();
   }
@@ -100,7 +90,7 @@ class Implementation {
   }
 
   /**
-   * Takes a position object and adjusts it to accomodate optional offset.
+   * Takes a position object and adjusts it to accommodate optional offset.
    *
    * @param position - The result of getClientBoundingRect()
    */
@@ -123,8 +113,6 @@ class Implementation {
 
   /**
    * A RAF loop that re-runs reposition if the scroll position has changed.
-   *
-   * @todo Re-add some kind of caching? 
    */
   private repositionLoop() {
     this.reposition();
@@ -142,7 +130,6 @@ class Implementation {
         const id = elem.id ? `#${elem.id}` : '';
         const classes = [...Array.from(elem.classList)].map(x => `.${x}`).join('');
         const targetStr = `${id}${classes}`;
-        // @todo Check this with multiple targets
         return `${str} ${targetStr}, ${targetStr} *`;
       }, '');
     }
@@ -158,39 +145,6 @@ class Implementation {
 
     if (!e.target.matches(this.targetQuery)) {
       this.close();
-    }
-  }
-
-  /**
-   * MutationObserver callback.
-   */
-  private mutationCallback(mutations: MutationEvent[]) {
-    mutations.forEach(mutation => {
-      // Check if the mutation is one we caused ourselves.
-      if (!this.elems.maskWindows.find(target => target === mutation.target)) {
-        this.reposition();
-      } 
-    });
-  }
-
-  /**
-   * Enables/disables event listeners.
-   */
-  private listeners(enable = true) {
-    if (enable) {
-      this.observer.observe(document, {
-        attributes: true,
-        childList: true,
-        subtree: true,
-      });
-
-      window.addEventListener('resize', this.reposition);
-      window.addEventListener('scroll', this.reposition);
-    } else {
-      this.observer.disconnect();
-
-      window.removeEventListener('resize', this.reposition);
-      window.removeEventListener('scroll', this.reposition);
     }
   }
 
@@ -211,7 +165,7 @@ class Implementation {
    * Destroys the instance and cleans up.
    */
   destroy() {
-    if (this.loop) cancelAnimationFrame(this.loop);
+    cancelAnimationFrame(this.loop);
     this.elems.limelight.parentNode.removeChild(this.elems.limelight);
   }
 
@@ -219,30 +173,15 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
-    console.log('reposition');
     this.elems.maskWindows.forEach((mask, i) => {
-      const first = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
+      const pos = this.calculateOffsets(
+        this.elems.target[i].getBoundingClientRect(),
+      );
 
-      mask.style.left = `${first.left}px`;
-      mask.style.top = `${first.top}px`;
-      mask.style.width = `${first.width}px`;
-      mask.style.height = `${first.height}px`;
-
-      const last = this.calculateOffsets(this.elems.target[i].getBoundingClientRect());
-
-      // Invert: determine the delta between the 
-      // first and last bounds to invert the element
-      const deltaX = first.left - last.left;
-      const deltaY = first.top - last.top;
-      const deltaW = first.width / last.width;
-      const deltaH = first.height / last.height;
-
-      mask.style.transformOrigin = 'top left';
-      mask.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${deltaW}, ${deltaH})`;
-
-      this.elems.target[i].getBoundingClientRect();
-
-      mask.style.transform = '';
+      mask.style.transform = `
+        translate(${pos.left}px, ${pos.top}px)
+        scale(${pos.width}, ${pos.height})
+      `;
     });
   }
 
@@ -267,10 +206,8 @@ class Implementation {
     // can't be stopped.
     requestAnimationFrame(() => {
       document.addEventListener('click', this.handleClick);
-      // this.repositionLoop();
-      this.reposition();
+      this.repositionLoop();
       this.elems.limelight.classList.add(this.options.classes.activeClass);
-      this.listeners();
     });
   }
 
@@ -289,8 +226,6 @@ class Implementation {
     document.removeEventListener('click', this.handleClick);
 
     cancelAnimationFrame(this.loop);
-
-    this.listeners(false);
   }
 
   /**

@@ -25,7 +25,11 @@ document.addEventListener("DOMContentLoaded", function demoInit() {
     inst.open();
 
     setTimeout(() => {
-      document.querySelector('.intro').style.minHeight = '10vh';
-    }, 3000);
+      inst.refocus(document.querySelector('.js-demo-basic__target'));
+    }, 2000);
+
+    // setTimeout(() => {
+    //   document.querySelector('.intro').style.minHeight = '10vh';
+    // }, 3000);
   });
 });

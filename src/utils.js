@@ -9,6 +9,11 @@ function mergeOptions(defaultOptions = {}, userOptions = {}) {
     ), {});
 }
 
+function uid() {
+  return Math.random().toString(36).substr(2, 9);
+}
+
 export default {
   mergeOptions,
+  uid,
 };
