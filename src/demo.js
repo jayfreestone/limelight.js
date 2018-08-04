@@ -24,9 +24,9 @@ document.addEventListener("DOMContentLoaded", function demoInit() {
 
     inst.open();
 
-    setTimeout(() => {
-      inst.refocus(document.querySelector('.js-demo-basic__target'));
-    }, 2000);
+    // setTimeout(() => {
+    //   inst.refocus(document.querySelector('.js-demo-basic__target'));
+    // }, 2000);
 
     // setTimeout(() => {
     //   document.querySelector('.intro').style.minHeight = '10vh';
