@@ -24,7 +24,8 @@ class Implementation {
   };
   private readonly options: OptionsType;
   private isOpen: boolean;
-  private loop: undefined|number;
+  private observer: MutationObserver;
+  // private loop: undefined|number;
   private caches: {
     targetQuery: {
       elems: undefined|TargetType,
@@ -35,7 +36,7 @@ class Implementation {
   constructor(target: TargetType, options: OptionsType = {}) {
     this.id = `clipElem-${u.uid()}`;
 
-    this.loop = undefined;
+    // this.loop = undefined;
 
     this.emitter = new EventEmitter();
 
@@ -48,6 +49,8 @@ class Implementation {
     };
 
     this.options = u.mergeOptions(defaultOptions, options);
+
+    this.observer = new MutationObserver(this.mutationCallback.bind(this));
 
     this.isOpen = false;
 
@@ -63,7 +66,6 @@ class Implementation {
     this.refocus = this.refocus.bind(this);
     this.close = this.close.bind(this);
     this.reposition = this.reposition.bind(this);
-    this.repositionLoop = this.repositionLoop.bind(this);
     this.handleClick = this.handleClick.bind(this);
 
     this.init();
@@ -81,10 +83,18 @@ class Implementation {
    */
   private renderOverlay(): string {
     return `
-      <div class="limelight" id="${this.id}" aria-hidden>
-        ${this.elems.target.map((elem, i) => `
-          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}"></div>
-        `).join('')}
+      <div class="limelight" id="${this.id}">
+        <svg height="100%" width="100%">
+          <defs>
+            <mask id="${this.id}-mask">
+              <rect x="0" y="0" width="100%" height="100%" fill="white" />
+              ${this.elems.target.map((elem, i) => `
+                <rect class="${this.id}-window" id="${this.id}-window-${i}" x="0" y="0" width="0" height="0" fill="black" />
+              `).join('')}
+            </mask>
+          </defs>
+          <rect x="0" y="0" width="100%" height="100%" fill="black" opacity="0.8" style="mask: url('#${this.id}-mask');" />
+        </svg> 
       </div>
     `;
   }
@@ -109,14 +119,6 @@ class Implementation {
       width: width + (offset * 2),
       height: height + (offset * 2),
     };
-  }
-
-  /**
-   * A RAF loop that re-runs reposition if the scroll position has changed.
-   */
-  private repositionLoop() {
-    this.reposition();
-    this.loop = requestAnimationFrame(this.repositionLoop);
   }
 
   /**
@@ -155,6 +157,7 @@ class Implementation {
     const svgElem = this.createBGElem();
     this.elems.limelight = svgElem.querySelector(`#${this.id}`);
     this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
+    this.elems.svg = svgElem.querySelector('svg');
 
     document.body.appendChild(svgElem);
 
@@ -165,24 +168,66 @@ class Implementation {
    * Destroys the instance and cleans up.
    */
   destroy() {
-    cancelAnimationFrame(this.loop);
+    // cancelAnimationFrame(this.loop);
     this.elems.limelight.parentNode.removeChild(this.elems.limelight);
+  }
+
+  /**
+   * Enables/disables event listeners.
+   */
+  private listeners(enable = true) {
+    if (enable) {
+      this.observer.observe(document, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+      });
+
+      window.addEventListener('resize', this.reposition);
+    } else {
+      this.observer.disconnect();
+
+      window.removeEventListener('resize', this.reposition);
+    }
+  }
+
+  /**
+   * MutationObserver callback.
+   */
+  private mutationCallback(mutations: MutationEvent[]) {
+    mutations.forEach(mutation => {
+      // Check if the mutation is one we caused ourselves.
+      if (mutation.target !== this.elems.svg && !this.elems.maskWindows.find(target => target === mutation.target)) {
+        this.reposition();
+      }
+    });
   }
 
   /**
    * Resets the position on the windows.
    */
   reposition() {
+    console.log('reposition!');
+    this.elems.svg.setAttribute('height', this.getPageHeight());
+
     this.elems.maskWindows.forEach((mask, i) => {
       const pos = this.calculateOffsets(
         this.elems.target[i].getBoundingClientRect(),
       );
 
-      mask.style.transform = `
-        translate(${pos.left}px, ${pos.top}px)
-        scale(${pos.width}, ${pos.height})
-      `;
+      mask.setAttribute('x', pos.left);
+      mask.setAttribute('y', pos.top + window.scrollY);
+      mask.setAttribute('width', pos.width);
+      mask.setAttribute('height', pos.height);
     });
+  }
+
+  getPageHeight() {
+    const body = document.body;
+    const html = document.documentElement;
+
+    return Math.max( body.scrollHeight, body.offsetHeight,
+      html.clientHeight, html.scrollHeight, html.offsetHeight );
   }
 
   /**
@@ -206,8 +251,9 @@ class Implementation {
     // can't be stopped.
     requestAnimationFrame(() => {
       document.addEventListener('click', this.handleClick);
-      this.repositionLoop();
+      this.reposition();
       this.elems.limelight.classList.add(this.options.classes.activeClass);
+      this.listeners();
     });
   }
 
@@ -219,13 +265,17 @@ class Implementation {
 
     this.isOpen = false;
 
+    this.elems.svg.setAttribute('height', 0);
+
     this.elems.limelight.classList.remove(this.options.classes.activeClass);
 
     this.emitter.trigger(new CloseEvent());
 
     document.removeEventListener('click', this.handleClick);
 
-    cancelAnimationFrame(this.loop);
+    this.listeners(false);
+
+    // cancelAnimationFrame(this.loop);
   }
 
   /**

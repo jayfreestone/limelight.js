@@ -10,17 +10,22 @@
     <link rel="stylesheet" href="/src/styles/demo.css">
     <link href="https://fonts.googleapis.com/css?family=Rubik:400,900" rel="stylesheet">
     <style>
+        /*#demos .container {*/
+            /*position: sticky;*/
+            /*position: -webkit-sticky;*/
+            /*top: 0;*/
+        /*}*/
+
         .limelight {
-            position: fixed;
+            position: absolute;
             top: 0;
             right: 0;
             bottom: 0;
             left: 0;
+            height: 100%;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            mix-blend-mode: hard-light;
-            background-color: rgba(0, 0, 0, 0.8);
             will-change: transform;
         }
 
@@ -64,7 +69,7 @@
                 </div>
             </div>
         </header>
-        <section id="#demos">
+        <section id="demos">
             <div class="container">
                 <h2>Demos</h2>
                 <h3>

@@ -179,7 +179,7 @@
       function Implementation(target, options$$1) {
           if (options$$1 === void 0) { options$$1 = {}; }
           this.id = "clipElem-" + u.uid();
-          this.loop = undefined;
+          // this.loop = undefined;
           this.emitter = new EventEmitter();
           this.elems = {
               // Handle querySelector or querySelectorAll
@@ -188,6 +188,7 @@
               maskWindows: undefined,
           };
           this.options = u.mergeOptions(options, options$$1);
+          this.observer = new MutationObserver(this.mutationCallback.bind(this));
           this.isOpen = false;
           this.caches = {
               targetQuery: {
@@ -200,7 +201,6 @@
           this.refocus = this.refocus.bind(this);
           this.close = this.close.bind(this);
           this.reposition = this.reposition.bind(this);
-          this.repositionLoop = this.repositionLoop.bind(this);
           this.handleClick = this.handleClick.bind(this);
           this.init();
       }
@@ -215,7 +215,7 @@
        */
       Implementation.prototype.renderOverlay = function () {
           var _this = this;
-          return "\n      <div class=\"limelight\" id=\"" + this.id + "\" aria-hidden>\n        " + this.elems.target.map(function (elem, i) { return "\n          <div class=\"" + _this.id + "-window limelight__window\" id=\"" + _this.id + "-window-" + i + "\"></div>\n        "; }).join('') + "\n      </div>\n    ";
+          return "\n      <div class=\"limelight\" id=\"" + this.id + "\">\n        <svg height=\"100%\" width=\"100%\">\n          <defs>\n            <mask id=\"" + this.id + "-mask\">\n              <rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"white\" />\n              " + this.elems.target.map(function (elem, i) { return "\n                <rect class=\"" + _this.id + "-window\" id=\"" + _this.id + "-window-" + i + "\" x=\"0\" y=\"0\" width=\"0\" height=\"0\" fill=\"black\" />\n              "; }).join('') + "\n            </mask>\n          </defs>\n          <rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"black\" opacity=\"0.8\" style=\"mask: url('#" + this.id + "-mask');\" />\n        </svg> \n      </div>\n    ";
       };
       /**
        * Takes a position object and adjusts it to accommodate optional offset.
@@ -231,13 +231,6 @@
               width: width + (offset * 2),
               height: height + (offset * 2),
           };
-      };
-      /**
-       * A RAF loop that re-runs reposition if the scroll position has changed.
-       */
-      Implementation.prototype.repositionLoop = function () {
-          this.reposition();
-          this.loop = requestAnimationFrame(this.repositionLoop);
       };
       Object.defineProperty(Implementation.prototype, "targetQuery", {
           /**
@@ -275,6 +268,7 @@
           var svgElem = this.createBGElem();
           this.elems.limelight = svgElem.querySelector("#" + this.id);
           this.elems.maskWindows = Array.from(svgElem.querySelectorAll("." + this.id + "-window"));
+          this.elems.svg = svgElem.querySelector('svg');
           document.body.appendChild(svgElem);
           this.reposition();
       };
@@ -282,18 +276,58 @@
        * Destroys the instance and cleans up.
        */
       Implementation.prototype.destroy = function () {
-          cancelAnimationFrame(this.loop);
+          // cancelAnimationFrame(this.loop);
           this.elems.limelight.parentNode.removeChild(this.elems.limelight);
+      };
+      /**
+       * Enables/disables event listeners.
+       */
+      Implementation.prototype.listeners = function (enable) {
+          if (enable === void 0) { enable = true; }
+          if (enable) {
+              this.observer.observe(document, {
+                  attributes: true,
+                  childList: true,
+                  subtree: true,
+              });
+              window.addEventListener('resize', this.reposition);
+          }
+          else {
+              this.observer.disconnect();
+              window.removeEventListener('resize', this.reposition);
+          }
+      };
+      /**
+       * MutationObserver callback.
+       */
+      Implementation.prototype.mutationCallback = function (mutations) {
+          var _this = this;
+          mutations.forEach(function (mutation) {
+              // Check if the mutation is one we caused ourselves.
+              if (mutation.target !== _this.elems.svg && !_this.elems.maskWindows.find(function (target) { return target === mutation.target; })) {
+                  _this.reposition();
+              }
+          });
       };
       /**
        * Resets the position on the windows.
        */
       Implementation.prototype.reposition = function () {
           var _this = this;
+          console.log('reposition!');
+          this.elems.svg.setAttribute('height', this.getPageHeight());
           this.elems.maskWindows.forEach(function (mask, i) {
               var pos = _this.calculateOffsets(_this.elems.target[i].getBoundingClientRect());
-              mask.style.transform = "\n        translate(" + pos.left + "px, " + pos.top + "px)\n        scale(" + pos.width + ", " + pos.height + ")\n      ";
+              mask.setAttribute('x', pos.left);
+              mask.setAttribute('y', pos.top + window.scrollY);
+              mask.setAttribute('width', pos.width);
+              mask.setAttribute('height', pos.height);
           });
+      };
+      Implementation.prototype.getPageHeight = function () {
+          var body = document.body;
+          var html = document.documentElement;
+          return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
       };
       /**
        * Open the overlay.
@@ -314,8 +348,9 @@
           // can't be stopped.
           requestAnimationFrame(function () {
               document.addEventListener('click', _this.handleClick);
-              _this.repositionLoop();
+              _this.reposition();
               _this.elems.limelight.classList.add(_this.options.classes.activeClass);
+              _this.listeners();
           });
       };
       /**
@@ -325,10 +360,12 @@
           if (!this.isOpen)
               return;
           this.isOpen = false;
+          this.elems.svg.setAttribute('height', 0);
           this.elems.limelight.classList.remove(this.options.classes.activeClass);
           this.emitter.trigger(new CloseEvent());
           document.removeEventListener('click', this.handleClick);
-          cancelAnimationFrame(this.loop);
+          this.listeners(false);
+          // cancelAnimationFrame(this.loop);
       };
       /**
        * Passes through the event to the emitter.
