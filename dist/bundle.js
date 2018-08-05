@@ -179,7 +179,6 @@
       function Implementation(target, options$$1) {
           if (options$$1 === void 0) { options$$1 = {}; }
           this.id = "clipElem-" + u.uid();
-          this.loop = undefined;
           this.emitter = new EventEmitter();
           this.elems = {
               // Handle querySelector or querySelectorAll
@@ -187,6 +186,7 @@
               limelight: undefined,
               maskWindows: undefined,
           };
+          this.observer = new MutationObserver(this.mutationCallback.bind(this));
           this.options = u.mergeOptions(options, options$$1);
           this.isOpen = false;
           this.caches = {
@@ -200,7 +200,6 @@
           this.refocus = this.refocus.bind(this);
           this.close = this.close.bind(this);
           this.reposition = this.reposition.bind(this);
-          this.repositionLoop = this.repositionLoop.bind(this);
           this.handleClick = this.handleClick.bind(this);
           this.init();
       }
@@ -231,13 +230,6 @@
               width: width + (offset * 2),
               height: height + (offset * 2),
           };
-      };
-      /**
-       * A RAF loop that re-runs reposition if the scroll position has changed.
-       */
-      Implementation.prototype.repositionLoop = function () {
-          this.reposition();
-          this.loop = requestAnimationFrame(this.repositionLoop);
       };
       Object.defineProperty(Implementation.prototype, "targetQuery", {
           /**
@@ -278,6 +270,43 @@
           document.body.appendChild(svgElem);
           this.reposition();
       };
+      Implementation.prototype.getPageHeight = function () {
+          var body = document.body;
+          var html = document.documentElement;
+          return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+      };
+      /**
+       * MutationObserver callback.
+       */
+      Implementation.prototype.mutationCallback = function (mutations) {
+          var _this = this;
+          mutations.forEach(function (mutation) {
+              // Check if the mutation is one we caused ourselves.
+              if (mutation.target !== _this.elems.svg && !_this.elems.maskWindows.find(function (target) { return target === mutation.target; })) {
+                  _this.reposition();
+              }
+          });
+      };
+      /**
+       * Enables/disables event listeners.
+       */
+      Implementation.prototype.listeners = function (enable) {
+          if (enable === void 0) { enable = true; }
+          if (enable) {
+              this.observer.observe(document, {
+                  attributes: true,
+                  childList: true,
+                  subtree: true,
+              });
+              window.addEventListener('resize', this.reposition);
+              document.addEventListener('click', this.handleClick);
+          }
+          else {
+              this.observer.disconnect();
+              window.removeEventListener('resize', this.reposition);
+              document.removeEventListener('click', this.handleClick);
+          }
+      };
       /**
        * Destroys the instance and cleans up.
        */
@@ -290,9 +319,10 @@
        */
       Implementation.prototype.reposition = function () {
           var _this = this;
+          this.elems.limelight.style.height = this.getPageHeight() + "px";
           this.elems.maskWindows.forEach(function (mask, i) {
               var pos = _this.calculateOffsets(_this.elems.target[i].getBoundingClientRect());
-              mask.style.transform = "\n        translate(" + pos.left + "px, " + pos.top + "px)\n        scale(" + pos.width + ", " + pos.height + ")\n      ";
+              mask.style.transform = "\n        translate(" + pos.left + "px, " + (pos.top + window.scrollY) + "px)\n        scale(" + pos.width + ", " + pos.height + ")\n      ";
           });
       };
       /**
@@ -313,9 +343,9 @@
           // This is safeguard for when the event is not passed in and thus propgation
           // can't be stopped.
           requestAnimationFrame(function () {
-              document.addEventListener('click', _this.handleClick);
-              _this.repositionLoop();
+              _this.reposition();
               _this.elems.limelight.classList.add(_this.options.classes.activeClass);
+              _this.listeners();
           });
       };
       /**
@@ -326,9 +356,9 @@
               return;
           this.isOpen = false;
           this.elems.limelight.classList.remove(this.options.classes.activeClass);
+          this.elems.limelight.style.height = this.getPageHeight() + "px";
           this.emitter.trigger(new CloseEvent());
-          document.removeEventListener('click', this.handleClick);
-          cancelAnimationFrame(this.loop);
+          this.listeners(false);
       };
       /**
        * Passes through the event to the emitter.

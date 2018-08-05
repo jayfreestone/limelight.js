@@ -10,8 +10,12 @@
     <link rel="stylesheet" href="/src/styles/demo.css">
     <link href="https://fonts.googleapis.com/css?family=Rubik:400,900" rel="stylesheet">
     <style>
+        .site {
+            background-color: #fff;
+        }
+
         .limelight {
-            position: fixed;
+            position: absolute;
             top: 0;
             right: 0;
             bottom: 0;
@@ -19,9 +23,8 @@
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-            mix-blend-mode: hard-light;
-            background-color: rgba(0, 0, 0, 0.8);
             will-change: transform;
+            z-index: 999;
         }
 
         .limelight--is-active {
@@ -29,16 +32,30 @@
             visibility: visible;
         }
 
+        /*.limelight--is-active .limelight__window {*/
+            /*transition: transform 1s;*/
+        /*}*/
+
         .limelight__window {
-            background-color: grey;
             position: absolute;
             transform-origin: top left;
             width: 1px;
             height: 1px;
+            border-radius: 4px;
+            /* Old style hack for highlighting, needed for Edge etc */
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
         }
 
-        .limelight--is-refocusing {
-            transition: transform 2s;
+        @supports (mix-blend-mode: hard-light) {
+            .limelight {
+                mix-blend-mode: hard-light;
+                background-color: rgba(0, 0, 0, 0.8);
+            }
+
+            .limelight__window {
+                background-color: grey;
+                box-shadow: none;
+            }
         }
     </style>
 </head>
@@ -64,12 +81,25 @@
                 </div>
             </div>
         </header>
-        <section id="#demos">
-            <div class="container">
-                <h2>Demos</h2>
+        <section id="demos">
+            <div class="container content">
+                <h2>Get your shine on</h2>
+                <h3>
+                    Basic
+                </h3>
+                <div class="js-demo-basic">
+                    <p>Cast a limelight on a simple box, classic tour-style.</p>
+                    <button class="js-demo-basic__trigger push-bottom">
+                        Shine on
+                    </button>
+                    <div class="js-demo-basic__target box">
+                        A generic box full of great content.
+                    </div>
+                </div>
                 <h3>
                     Auto-adjust
                 </h3>
+                <p>Limelight will auto-adjust itself if something changes on the page, so you don't have to worry about interactions causing a casting malfunction.</p>
                 <div class="js-demo-auto-adjust">
                     <button class="js-demo-auto-adjust__trigger push-bottom">
                         Cast a limelight
@@ -77,20 +107,23 @@
                     <div class="js-demo-auto-adjust__target box">
                         <h4>Auto-adjust</h4>
                         <details>
-                            <summary>Content toggle</summary>
+                            <summary>Click me while I'm in the limelight</summary>
                             <p>Most tooltip-tours include a blackout-style overlay that 'shines' a light on the target element.</p>
                         </details>
                     </div>
                 </div>
                 <h3>
-                    Basic
+                    Auto-adjust
                 </h3>
-                <div class="js-demo-basic">
-                    <button class="js-demo-basic__trigger push-bottom">
-                        Shine on
+                <div class="js-demo-goto">
+                    <button class="js-demo-goto__trigger push-bottom">
+                        Mighty Morphin'
                     </button>
-                    <div class="js-demo-basic__target box">
-                        A generic box full of great content.
+                    <div class="js-demo-goto__target box push-bottom">
+                        <h4>From here</h4>
+                    </div>
+                    <div class="js-demo-goto__dest box box--sm">
+                        <h4>To here</h4>
                     </div>
                 </div>
             </div>

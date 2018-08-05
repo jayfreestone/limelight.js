@@ -23,8 +23,8 @@ class Implementation {
     maskWindows: HTMLElement[],
   };
   private readonly options: OptionsType;
+  private observer: MutationObserver;
   private isOpen: boolean;
-  private loop: undefined|number;
   private caches: {
     targetQuery: {
       elems: undefined|TargetType,
@@ -35,10 +35,7 @@ class Implementation {
   constructor(target: TargetType, options: OptionsType = {}) {
     this.id = `clipElem-${u.uid()}`;
 
-    this.loop = undefined;
-
     this.emitter = new EventEmitter();
-
 
     this.elems = {
       // Handle querySelector or querySelectorAll
@@ -46,6 +43,8 @@ class Implementation {
       limelight: undefined,
       maskWindows: undefined,
     };
+
+    this.observer = new MutationObserver(this.mutationCallback.bind(this));
 
     this.options = u.mergeOptions(defaultOptions, options);
 
@@ -63,7 +62,6 @@ class Implementation {
     this.refocus = this.refocus.bind(this);
     this.close = this.close.bind(this);
     this.reposition = this.reposition.bind(this);
-    this.repositionLoop = this.repositionLoop.bind(this);
     this.handleClick = this.handleClick.bind(this);
 
     this.init();
@@ -112,14 +110,6 @@ class Implementation {
   }
 
   /**
-   * A RAF loop that re-runs reposition if the scroll position has changed.
-   */
-  private repositionLoop() {
-    this.reposition();
-    this.loop = requestAnimationFrame(this.repositionLoop);
-  }
-
-  /**
    * Extracts classes/ids from target elements to create a css selector.
    */
   private get targetQuery(): string {
@@ -161,6 +151,52 @@ class Implementation {
     this.reposition();
   }
 
+  private getPageHeight() {
+    const body = document.body;
+    const html = document.documentElement;
+
+    return Math.max(
+      body.scrollHeight,
+      body.offsetHeight,
+      html.clientHeight,
+      html.scrollHeight,
+      html.offsetHeight,
+    );
+  }
+
+  /**
+   * MutationObserver callback.
+   */
+  private mutationCallback(mutations: MutationEvent[]) {
+    mutations.forEach(mutation => {
+      // Check if the mutation is one we caused ourselves.
+      if (mutation.target !== this.elems.svg && !this.elems.maskWindows.find(target => target === mutation.target)) {
+        this.reposition();
+      }
+    });
+  }
+
+  /**
+   * Enables/disables event listeners.
+   */
+  private listeners(enable = true) {
+    if (enable) {
+      this.observer.observe(document, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+      });
+
+      window.addEventListener('resize', this.reposition);
+      document.addEventListener('click', this.handleClick);
+    } else {
+      this.observer.disconnect();
+
+      window.removeEventListener('resize', this.reposition);
+      document.removeEventListener('click', this.handleClick);
+    }
+  }
+
   /**
    * Destroys the instance and cleans up.
    */
@@ -173,13 +209,15 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
+    this.elems.limelight.style.height = `${this.getPageHeight()}px`;
+
     this.elems.maskWindows.forEach((mask, i) => {
       const pos = this.calculateOffsets(
         this.elems.target[i].getBoundingClientRect(),
       );
 
       mask.style.transform = `
-        translate(${pos.left}px, ${pos.top}px)
+        translate(${pos.left}px, ${pos.top + window.scrollY}px)
         scale(${pos.width}, ${pos.height})
       `;
     });
@@ -205,9 +243,9 @@ class Implementation {
     // This is safeguard for when the event is not passed in and thus propgation
     // can't be stopped.
     requestAnimationFrame(() => {
-      document.addEventListener('click', this.handleClick);
-      this.repositionLoop();
+      this.reposition();
       this.elems.limelight.classList.add(this.options.classes.activeClass);
+      this.listeners();
     });
   }
 
@@ -221,11 +259,11 @@ class Implementation {
 
     this.elems.limelight.classList.remove(this.options.classes.activeClass);
 
+    this.elems.limelight.style.height = `${this.getPageHeight()}px`;
+
     this.emitter.trigger(new CloseEvent());
 
-    document.removeEventListener('click', this.handleClick);
-
-    cancelAnimationFrame(this.loop);
+    this.listeners(false);
   }
 
   /**
