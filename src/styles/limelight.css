@@ -10,7 +10,6 @@
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    will-change: transform;
     z-index: 999;
     z-index: var(--limelight-z-index);
 }
@@ -30,7 +29,6 @@
     transform-origin: top left;
     width: 1px;
     height: 1px;
-    border-radius: 4px;
     /**
      * Old style hack for highlighting, needed for Edge etc.
      * Falls back to black if custom properties not supported.

@@ -1,1 +1,459 @@
-!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):t.Limelight=e()}(this,function(){"use strict";var t={mergeOptions:function(t={},e={}){return Object.keys(t).reduce((i,n)=>Object.assign(i,{[n]:e[n]?e[n]:t[n]}),{})},uid:function(){return Math.random().toString(36).substr(2,9)}},e={offset:10,closeOnClick:!0,classes:{window:"limelight__window",activeClass:"limelight--is-active"},styles:{}},i=function(t,e){return(i=Object.setPrototypeOf||{__proto__:[]}instanceof Array&&function(t,e){t.__proto__=e}||function(t,e){for(var i in e)e.hasOwnProperty(i)&&(t[i]=e[i])})(t,e)};function n(t,e){function n(){this.constructor=t}i(t,e),t.prototype=null===e?Object.create(e):(n.prototype=e.prototype,new n)}var o=function(){function t(t,e){void 0===e&&(e={}),this.eventType=t,this.payload=e}return Object.defineProperty(t.prototype,"type",{get:function(){if(!this.eventType)throw new Error("Not implemented.");return this.eventType},set:function(t){this.eventType||(this.eventType=t)},enumerable:!0,configurable:!0}),t}(),s=function(t){function e(){for(var e=[],i=0;i<arguments.length;i++)e[i]=arguments[i];return t.apply(this,["close"].concat(e))||this}return n(e,t),e}(o),r=function(t){function e(){for(var e=[],i=0;i<arguments.length;i++)e[i]=arguments[i];return t.apply(this,["open"].concat(e))||this}return n(e,t),e}(o),c=function(){function t(){this.callbacks={}}return t.prototype.on=function(t,e){var i;this.callbacks=Object.assign({},this.callbacks,((i={})[t]=(this.callbacks[t]||[]).concat([e]),i))},t.prototype.trigger=function(t){if(t instanceof o){var e=this.callbacks[t.type];e&&e.forEach(function(e){try{e(t)}catch(t){console.error(t)}})}else console.error("Not a valid GenericEvent instance.",t)},t}(),a=function(){function i(i,n){void 0===n&&(n={}),this.id="clipElem-"+t.uid(),this.emitter=new c,this.elems={target:Array.isArray(i)?Array.from(i):[i],limelight:void 0,maskWindows:void 0},this.observer=new MutationObserver(this.mutationCallback.bind(this)),this.options=t.mergeOptions(e,n),this.isOpen=!1,this.caches={targetQuery:{elems:void 0,result:void 0}},this.on=this.on.bind(this),this.open=this.open.bind(this),this.refocus=this.refocus.bind(this),this.close=this.close.bind(this),this.reposition=this.reposition.bind(this),this.handleClick=this.handleClick.bind(this),this.init()}return i.prototype.createBGElem=function(){return document.createRange().createContextualFragment(this.renderOverlay())},i.prototype.renderOverlay=function(){var t=this,e=this.options.styles,i=void 0===e?{}:e,n=[i.bg&&"--limelight-bg: "+i.bg,i.windowTransitionDuration&&"--limelight-window-transition-duration: "+i.windowTransitionDuration,i.zIndex&&"--limelight-z-index: "+i.zIndex];return'\n      <div \n        class="limelight"\n        id="'+this.id+'"\n        style="'+n.filter(Boolean).join(" ")+'"\n        aria-hidden\n      >\n        '+this.elems.target.map(function(e,i){return'\n          <div class="'+t.id+'-window limelight__window" id="'+t.id+"-window-"+i+'"></div>\n        '}).join("")+"\n      </div>\n    "},i.prototype.calculateOffsets=function(t){var e=this.options.offset;return{left:t.left-e,top:t.top-e,width:t.width+2*e,height:t.height+2*e}},Object.defineProperty(i.prototype,"targetQuery",{get:function(){return this.caches.targetQuery.elems!==this.elems.target&&(this.caches.targetQuery.elems=this.elems.target,this.caches.targetQuery.result=this.elems.target.reduce(function(t,e){var i=""+(e.id?"#"+e.id:"")+Array.from(e.classList).slice().map(function(t){return"."+t}).join("");return t+" "+i+", "+i+" *"},"")),this.caches.targetQuery.result},enumerable:!0,configurable:!0}),i.prototype.handleClick=function(t){this.options.closeOnClick&&(t.target.matches(this.targetQuery)||this.close())},i.prototype.init=function(){var t=this.createBGElem();this.elems.limelight=t.querySelector("#"+this.id),this.elems.maskWindows=Array.from(t.querySelectorAll("."+this.id+"-window")),document.body.appendChild(t),this.reposition()},i.prototype.getPageHeight=function(){var t=document.body,e=document.documentElement;return Math.max(t.scrollHeight,t.offsetHeight,e.clientHeight,e.scrollHeight,e.offsetHeight)},i.prototype.mutationCallback=function(t){var e=this;t.forEach(function(t){t.target===e.elems.svg||e.elems.maskWindows.find(function(e){return e===t.target})||e.reposition()})},i.prototype.listeners=function(t){void 0===t&&(t=!0),t?(this.observer.observe(document,{attributes:!0,childList:!0,subtree:!0}),window.addEventListener("resize",this.reposition),document.addEventListener("click",this.handleClick)):(this.observer.disconnect(),window.removeEventListener("resize",this.reposition),document.removeEventListener("click",this.handleClick))},i.prototype.destroy=function(){cancelAnimationFrame(this.loop),this.elems.limelight.parentNode.removeChild(this.elems.limelight)},i.prototype.reposition=function(){var t=this;this.elems.limelight.style.height=this.getPageHeight()+"px",this.elems.maskWindows.forEach(function(e,i){var n=t.calculateOffsets(t.elems.target[i].getBoundingClientRect());e.style.transform="\n        translate("+n.left+"px, "+(n.top+window.scrollY)+"px)\n        scale("+n.width+", "+n.height+")\n      "})},i.prototype.open=function(t){var e=this;this.isOpen||(this.isOpen=!0,t&&t.target&&t.stopPropagation(),this.emitter.trigger(new r),requestAnimationFrame(function(){e.reposition(),e.elems.limelight.classList.add(e.options.classes.activeClass),e.listeners()}))},i.prototype.close=function(){this.isOpen&&(this.isOpen=!1,this.elems.limelight.classList.remove(this.options.classes.activeClass),this.elems.limelight.style.height=this.getPageHeight()+"px",this.emitter.trigger(new s),this.listeners(!1))},i.prototype.on=function(t,e){this.emitter.on(t,e)},i.prototype.refocus=function(t){this.elems.target=Array.isArray(t)?Array.from(t):[t],this.reposition()},i}(),l=["on","open","refocus","destroy","reposition"];return function(){return function(t,e){var i=this,n=new a(t,e);l.forEach(function(t){i[t]=n[t]})}}()});
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  typeof define === 'function' && define.amd ? define(factory) :
+  (global.Limelight = factory());
+}(this, (function () { 'use strict';
+
+  function mergeOptions(defaultOptions = {}, userOptions = {}) {
+    return Object.keys(defaultOptions)
+      .reduce((obj, key) => (
+        Object.assign(obj, {
+          [key]: userOptions[key]
+            ? userOptions[key]
+            : defaultOptions[key],
+        })
+      ), {});
+  }
+
+  function uid() {
+    return Math.random().toString(36).substr(2, 9);
+  }
+
+  var u = {
+    mergeOptions,
+    uid,
+  };
+
+  var options = {
+      offset: 10,
+      closeOnClick: true,
+      classes: {
+          window: 'limelight__window',
+          activeClass: 'limelight--is-active',
+      },
+      styles: {},
+  };
+
+  /*! *****************************************************************************
+  Copyright (c) Microsoft Corporation. All rights reserved.
+  Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+  this file except in compliance with the License. You may obtain a copy of the
+  License at http://www.apache.org/licenses/LICENSE-2.0
+
+  THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+  WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+  MERCHANTABLITY OR NON-INFRINGEMENT.
+
+  See the Apache Version 2.0 License for specific language governing permissions
+  and limitations under the License.
+  ***************************************************************************** */
+  /* global Reflect, Promise */
+
+  var extendStatics = function(d, b) {
+      extendStatics = Object.setPrototypeOf ||
+          ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+          function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+      return extendStatics(d, b);
+  };
+
+  function __extends(d, b) {
+      extendStatics(d, b);
+      function __() { this.constructor = d; }
+      d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  }
+
+  /**
+   * The base 'event' class used by an EventEmitter.
+   */
+  var GenericEvent = /** @class */ (function () {
+      /**
+       * @param eventType - The 'type' that will be listened for.
+       * @param payload - Any additional data.
+       */
+      function GenericEvent(eventType, payload) {
+          if (payload === void 0) { payload = {}; }
+          this.eventType = eventType;
+          this.payload = payload;
+      }
+      Object.defineProperty(GenericEvent.prototype, "type", {
+          /**
+           * @return string;
+           */
+          get: function () {
+              if (!this.eventType) {
+                  throw new Error('Not implemented.');
+              }
+              return this.eventType;
+          },
+          set: function (eventType) {
+              // Do not allow re-assignment
+              if (this.eventType)
+                  return;
+              this.eventType = eventType;
+          },
+          enumerable: true,
+          configurable: true
+      });
+      return GenericEvent;
+  }());
+
+  /**
+   * Indicates the instance has been closed.
+   */
+  var CloseEvent = /** @class */ (function (_super) {
+      __extends(CloseEvent, _super);
+      function CloseEvent() {
+          var args = [];
+          for (var _i = 0; _i < arguments.length; _i++) {
+              args[_i] = arguments[_i];
+          }
+          return _super.apply(this, ['close'].concat(args)) || this;
+      }
+      return CloseEvent;
+  }(GenericEvent));
+
+  /**
+   * Indicates the instance has opened.
+   */
+  var OpenEvent = /** @class */ (function (_super) {
+      __extends(OpenEvent, _super);
+      function OpenEvent() {
+          var args = [];
+          for (var _i = 0; _i < arguments.length; _i++) {
+              args[_i] = arguments[_i];
+          }
+          return _super.apply(this, ['open'].concat(args)) || this;
+      }
+      return OpenEvent;
+  }(GenericEvent));
+
+  /**
+   * Allows registration of callbacks that will be triggered on specific events.
+   */
+  var EventEmitter = /** @class */ (function () {
+      function EventEmitter() {
+          this.callbacks = {};
+      }
+      /**
+       * Used to listen for an event and fire a callback.
+       *
+       * @param type - The event type, will need to match an existing type.
+       * @param callback - The callback function to run.
+       */
+      EventEmitter.prototype.on = function (type, callback) {
+          var _a;
+          this.callbacks = Object.assign({}, this.callbacks, (_a = {},
+              _a[type] = (this.callbacks[type] || []).concat([callback]),
+              _a));
+      };
+      /**
+       * Takes an event (e.g. Open) and fires the callbacks for it.
+       *
+       * @param event - The event type.
+       * @example emitter.trigger(new OpenEvent());
+       */
+      EventEmitter.prototype.trigger = function (event) {
+          if (!(event instanceof GenericEvent)) {
+              console.error('Not a valid GenericEvent instance.', event);
+              return;
+          }
+          var callbacks = this.callbacks[event.type];
+          if (!callbacks)
+              return;
+          callbacks.forEach(function (cb) {
+              try {
+                  cb(event);
+              }
+              catch (e) {
+                  console.error(e);
+              }
+          });
+      };
+      return EventEmitter;
+  }());
+
+  /**
+   * Main library class.
+   */
+  var Implementation = /** @class */ (function () {
+      function Implementation(target, options$$1) {
+          if (options$$1 === void 0) { options$$1 = {}; }
+          this.id = "clipElem-" + u.uid();
+          this.emitter = new EventEmitter();
+          this.elems = {
+              // Handle querySelector or querySelectorAll
+              target: Array.isArray(target) ? Array.from(target) : [target],
+              limelight: undefined,
+              maskWindows: undefined,
+          };
+          this.observer = new MutationObserver(this.mutationCallback.bind(this));
+          this.options = u.mergeOptions(options, options$$1);
+          this.isOpen = false;
+          this.caches = {
+              targetQuery: {
+                  elems: undefined,
+                  result: undefined,
+              },
+          };
+          this.on = this.on.bind(this);
+          this.open = this.open.bind(this);
+          this.refocus = this.refocus.bind(this);
+          this.close = this.close.bind(this);
+          this.reposition = this.reposition.bind(this);
+          this.handleClick = this.handleClick.bind(this);
+          this.init();
+      }
+      /**
+       * Create an Document Fragment based on an overlay string
+       */
+      Implementation.prototype.createBGElem = function () {
+          return document.createRange().createContextualFragment(this.renderOverlay());
+      };
+      /**
+       * Creates a string that represents gradient stop points.
+       */
+      Implementation.prototype.renderOverlay = function () {
+          var _this = this;
+          var _a = this.options.styles, styles = _a === void 0 ? {} : _a;
+          /**
+           * Custom properties passed in as options are applied inline. If it has
+           * been passed in we use to to populate the array and generate the
+           * inline style attribute.
+           */
+          var inlineVars = [
+              styles.bg &&
+                  "--limelight-bg: " + styles.bg,
+              styles.windowTransitionDuration &&
+                  "--limelight-window-transition-duration: " + styles.windowTransitionDuration,
+              styles.zIndex &&
+                  "--limelight-z-index: " + styles.zIndex,
+          ];
+          return "\n      <div \n        class=\"limelight\"\n        id=\"" + this.id + "\"\n        style=\"" + inlineVars.filter(Boolean).join(' ') + "\"\n        aria-hidden\n      >\n        " + this.elems.target.map(function (elem, i) { return "\n          <div class=\"" + _this.id + "-window limelight__window\" id=\"" + _this.id + "-window-" + i + "\"></div>\n        "; }).join('') + "\n      </div>\n    ";
+      };
+      /**
+       * Takes a position object and adjusts it to accommodate optional offset.
+       *
+       * @param position - The result of getClientBoundingRect()
+       */
+      Implementation.prototype.calculateOffsets = function (position) {
+          var offset = this.options.offset;
+          var left = position.left, top = position.top, width = position.width, height = position.height;
+          return {
+              left: left - offset,
+              top: top - offset,
+              width: width + (offset * 2),
+              height: height + (offset * 2),
+          };
+      };
+      Object.defineProperty(Implementation.prototype, "targetQuery", {
+          /**
+           * Extracts classes/ids from target elements to create a css selector.
+           */
+          get: function () {
+              if (this.caches.targetQuery.elems !== this.elems.target) {
+                  this.caches.targetQuery.elems = this.elems.target;
+                  this.caches.targetQuery.result = this.elems.target.reduce(function (str, elem) {
+                      var id = elem.id ? "#" + elem.id : '';
+                      var classes = Array.from(elem.classList).slice().map(function (x) { return "." + x; }).join('');
+                      var targetStr = "" + id + classes;
+                      return str + " " + targetStr + ", " + targetStr + " *";
+                  }, '');
+              }
+              return this.caches.targetQuery.result;
+          },
+          enumerable: true,
+          configurable: true
+      });
+      /**
+       * Closes the overlay if the click happens outside of one of the target elements.
+       */
+      Implementation.prototype.handleClick = function (e) {
+          console.log('click');
+          if (!this.options.closeOnClick)
+              return;
+          if (!e.target.matches(this.targetQuery)) {
+              this.close();
+          }
+      };
+      /**
+       * Runs setup.
+       */
+      Implementation.prototype.init = function () {
+          var svgElem = this.createBGElem();
+          this.elems.limelight = svgElem.querySelector("#" + this.id);
+          this.elems.maskWindows = Array.from(svgElem.querySelectorAll("." + this.id + "-window"));
+          document.body.appendChild(svgElem);
+          this.reposition();
+      };
+      Implementation.prototype.getPageHeight = function () {
+          var body = document.body;
+          var html = document.documentElement;
+          return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+      };
+      /**
+       * MutationObserver callback.
+       */
+      Implementation.prototype.mutationCallback = function (mutations) {
+          var _this = this;
+          mutations.forEach(function (mutation) {
+              // Check if the mutation is one we caused ourselves.
+              if (mutation.target !== _this.elems.svg && !_this.elems.maskWindows.find(function (target) { return target === mutation.target; })) {
+                  _this.reposition();
+              }
+          });
+      };
+      /**
+       * Enables/disables event listeners.
+       */
+      Implementation.prototype.listeners = function (enable) {
+          if (enable === void 0) { enable = true; }
+          if (enable) {
+              this.observer.observe(document, {
+                  attributes: true,
+                  childList: true,
+                  subtree: true,
+              });
+              // Required for iOS to handle click event
+              document.body.style.cursor = 'pointer';
+              window.addEventListener('resize', this.reposition);
+              document.addEventListener('click', this.handleClick);
+          }
+          else {
+              this.observer.disconnect();
+              document.body.style.cursor = undefined;
+              window.removeEventListener('resize', this.reposition);
+              document.removeEventListener('click', this.handleClick);
+          }
+      };
+      /**
+       * Destroys the instance and cleans up.
+       */
+      Implementation.prototype.destroy = function () {
+          cancelAnimationFrame(this.loop);
+          this.elems.limelight.parentNode.removeChild(this.elems.limelight);
+      };
+      /**
+       * Resets the position on the windows.
+       */
+      Implementation.prototype.reposition = function () {
+          var _this = this;
+          this.elems.limelight.style.height = this.getPageHeight() + "px";
+          this.elems.maskWindows.forEach(function (mask, i) {
+              var pos = _this.calculateOffsets(_this.elems.target[i].getBoundingClientRect());
+              mask.style.transform = "\n        translate(" + pos.left + "px, " + (pos.top + window.scrollY) + "px)\n        scale(" + pos.width + ", " + pos.height + ")\n      ";
+          });
+      };
+      /**
+       * Open the overlay.
+       */
+      Implementation.prototype.open = function (e) {
+          var _this = this;
+          if (this.isOpen)
+              return;
+          this.isOpen = true;
+          // If it looks like an event, try to stop it bubbling.
+          if (e && e.target) {
+              e.stopPropagation();
+          }
+          this.emitter.trigger(new OpenEvent());
+          // If we don't encourage the listener to happen on next-tick,
+          // we'll end up with the listener firing for this if it was triggered on-click.
+          // This is safeguard for when the event is not passed in and thus propgation
+          // can't be stopped.
+          requestAnimationFrame(function () {
+              _this.reposition();
+              _this.elems.limelight.classList.add(_this.options.classes.activeClass);
+              _this.listeners();
+          });
+      };
+      /**
+       * Close the overlay.
+       */
+      Implementation.prototype.close = function () {
+          if (!this.isOpen)
+              return;
+          this.isOpen = false;
+          this.elems.limelight.classList.remove(this.options.classes.activeClass);
+          this.elems.limelight.style.height = this.getPageHeight() + "px";
+          this.emitter.trigger(new CloseEvent());
+          this.listeners(false);
+      };
+      /**
+       * Passes through the event to the emitter.
+       */
+      Implementation.prototype.on = function (event, callback) {
+          this.emitter.on(event, callback);
+      };
+      /**
+       * Change the window focus to a different element/set of elements.
+       */
+      Implementation.prototype.refocus = function (target) {
+          this.elems.target = Array.isArray(target) ? Array.from(target) : [target];
+          this.reposition();
+      };
+      return Implementation;
+  }());
+
+  /**
+   * Methods and properties to make public.
+   */
+  var publicAPI = ['on', 'open', 'refocus', 'destroy', 'reposition'];
+  /**
+   * Library Implementation with public API exposed.
+   */
+  var Limelight = /** @class */ (function () {
+      function Limelight(target, options) {
+          var _this = this;
+          var implementation = new Implementation(target, options);
+          publicAPI.forEach(function (prop) {
+              _this[prop] = implementation[prop];
+          });
+      }
+      return Limelight;
+  }());
+
+  // document.addEventListener('DOMContentLoaded', () => {
+  //   // const targets = document.querySelectorAll('.box__thing');
+  //   const targets = document.querySelector('.box__thing');
+  //   const boxGrad = new Limelight(targets);
+
+  //   document.querySelector('.js-start').addEventListener('click', (e) => {
+  //     e.stopPropagation();
+  //     e.preventDefault();
+  //     boxGrad.open();
+  //   });
+
+  //   boxGrad.on('open', (e) => {
+  //     console.log('opening', e);
+  //   });
+
+  //   boxGrad.on('close', (e) => {
+  //     console.log('closing', e);
+  //   });
+
+  //   boxGrad.on('reposition', (e) => {
+  //     console.log('repositioning', e);
+  //   });
+
+
+  //   setTimeout(() => {
+  //     boxGrad.refocus(document.querySelector('.other-thing'));
+  //   }, 2000);
+
+  //   // targets.forEach(target => {
+  //   //   target.addEventListener('open', () => {
+  //   //     console.log('we are opening');
+  //   //   });
+  //   //   target.addEventListener('close', () => {
+  //   //     console.log('we are closing');
+  //   //   });
+  //   // })
+
+  //   console.log(boxGrad);
+  // });
+
+  return Limelight;
+
+})));
+//# sourceMappingURL=index.js.map
