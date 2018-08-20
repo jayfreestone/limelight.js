@@ -47,8 +47,8 @@ h2 {
 }
 
 .site {
-    background-color: #fff;
     min-height: 100vh;
+    background-color: whitesmoke;
 }
 
 .push-top {

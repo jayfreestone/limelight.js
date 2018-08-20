@@ -182,14 +182,15 @@
           this.emitter = new EventEmitter();
           this.elems = {
               // Handle querySelector or querySelectorAll
-              target: Array.isArray(target) ? Array.from(target) : [target],
+              target: target,
               limelight: undefined,
-              maskWindows: undefined,
+              maskWindow: undefined,
           };
           this.observer = new MutationObserver(this.mutationCallback.bind(this));
           this.options = u.mergeOptions(options, options$$1);
           this.isOpen = false;
           this.caches = {
+              animations: [],
               targetQuery: {
                   elems: undefined,
                   result: undefined,
@@ -213,8 +214,7 @@
        * Creates a string that represents gradient stop points.
        */
       Implementation.prototype.renderOverlay = function () {
-          var _this = this;
-          return "\n      <div class=\"limelight\" id=\"" + this.id + "\" aria-hidden>\n        " + this.elems.target.map(function (elem, i) { return "\n          <div class=\"" + _this.id + "-window limelight__window\" id=\"" + _this.id + "-window-" + i + "\"></div>\n        "; }).join('') + "\n      </div>\n    ";
+          return "\n      <div class=\"limelight\" id=\"" + this.id + "\" aria-hidden>\n        <div class=\"" + this.id + "-window limelight__window\" id=\"" + this.id + "-window\"></div>\n      </div>\n    ";
       };
       /**
        * Takes a position object and adjusts it to accommodate optional offset.
@@ -236,16 +236,11 @@
            * Extracts classes/ids from target elements to create a css selector.
            */
           get: function () {
-              if (this.caches.targetQuery.elems !== this.elems.target) {
-                  this.caches.targetQuery.elems = this.elems.target;
-                  this.caches.targetQuery.result = this.elems.target.reduce(function (str, elem) {
-                      var id = elem.id ? "#" + elem.id : '';
-                      var classes = Array.from(elem.classList).slice().map(function (x) { return "." + x; }).join('');
-                      var targetStr = "" + id + classes;
-                      return str + " " + targetStr + ", " + targetStr + " *";
-                  }, '');
-              }
-              return this.caches.targetQuery.result;
+              var elem = this.elems.target;
+              var id = elem.id ? "#" + elem.id : '';
+              var classes = Array.from(elem.classList).slice().map(function (x) { return "." + x; }).join('');
+              var targetStr = "" + id + classes;
+              return targetStr + ", " + targetStr + " *";
           },
           enumerable: true,
           configurable: true
@@ -266,10 +261,13 @@
       Implementation.prototype.init = function () {
           var svgElem = this.createBGElem();
           this.elems.limelight = svgElem.querySelector("#" + this.id);
-          this.elems.maskWindows = Array.from(svgElem.querySelectorAll("." + this.id + "-window"));
+          this.elems.maskWindow = svgElem.querySelector("." + this.id + "-window");
           document.body.appendChild(svgElem);
           this.reposition();
       };
+      /**
+       * Returns the height of the document.
+       */
       Implementation.prototype.getPageHeight = function () {
           var body = document.body;
           var html = document.documentElement;
@@ -282,7 +280,7 @@
           var _this = this;
           mutations.forEach(function (mutation) {
               // Check if the mutation is one we caused ourselves.
-              if (mutation.target !== _this.elems.svg && !_this.elems.maskWindows.find(function (target) { return target === mutation.target; })) {
+              if (mutation.target !== _this.elems.svg && !_this.elems.maskWindow === mutation.target) {
                   _this.reposition();
               }
           });
@@ -311,19 +309,36 @@
        * Destroys the instance and cleans up.
        */
       Implementation.prototype.destroy = function () {
-          cancelAnimationFrame(this.loop);
           this.elems.limelight.parentNode.removeChild(this.elems.limelight);
       };
       /**
        * Resets the position on the windows.
        */
-      Implementation.prototype.reposition = function () {
-          var _this = this;
+      Implementation.prototype.reposition = function (prevPosition) {
           this.elems.limelight.style.height = this.getPageHeight() + "px";
-          this.elems.maskWindows.forEach(function (mask, i) {
-              var pos = _this.calculateOffsets(_this.elems.target[i].getBoundingClientRect());
-              mask.style.transform = "\n        translate(" + pos.left + "px, " + (pos.top + window.scrollY) + "px)\n        scale(" + pos.width + ", " + pos.height + ")\n      ";
-          });
+          var mask = this.elems.maskWindow;
+          var next = this.calculateOffsets(this.elems.target.getBoundingClientRect());
+          mask.style.transition = '';
+          mask.style.left = next.left + "px";
+          mask.style.top = next.top + window.scrollY + "px";
+          mask.style.width = next.width + "px";
+          mask.style.height = next.height + "px";
+          if (prevPosition) {
+              // Invert: determine the delta between the
+              // first and last bounds to invert the element
+              var deltaX = prevPosition.left - next.left;
+              var deltaY = (prevPosition.top + window.scrollY) - (next.top + window.scrollY);
+              var deltaW = prevPosition.width / next.width;
+              var deltaH = prevPosition.height / next.height;
+              this.caches.anim = mask.animate([
+                  {
+                      transform: "translate(" + deltaX + "px, " + deltaY + "px) scale(" + deltaW + ", " + deltaH + ")",
+                  },
+                  {
+                      transform: 'none',
+                  },
+              ], 800);
+          }
       };
       /**
        * Open the overlay.
@@ -340,8 +355,8 @@
           this.emitter.trigger(new OpenEvent());
           // If we don't encourage the listener to happen on next-tick,
           // we'll end up with the listener firing for this if it was triggered on-click.
-          // This is safeguard for when the event is not passed in and thus propgation
-          // can't be stopped.
+          // This is safeguard for when the event is not passed in and thus
+          // propagation can't be stopped.
           requestAnimationFrame(function () {
               _this.reposition();
               _this.elems.limelight.classList.add(_this.options.classes.activeClass);
@@ -354,6 +369,11 @@
       Implementation.prototype.close = function () {
           if (!this.isOpen)
               return;
+          if (this.caches.anim) {
+              this.caches.anim.cancel();
+              this.caches.anim = undefined;
+              console.log('cancelled cache');
+          }
           this.isOpen = false;
           this.elems.limelight.classList.remove(this.options.classes.activeClass);
           this.elems.limelight.style.height = this.getPageHeight() + "px";
@@ -369,9 +389,15 @@
       /**
        * Change the window focus to a different element/set of elements.
        */
-      Implementation.prototype.refocus = function (target) {
-          this.elems.target = Array.isArray(target) ? Array.from(target) : [target];
-          this.reposition();
+      Implementation.prototype.refocus = function (target, animate) {
+          if (animate === void 0) { animate = false; }
+          if (this.caches.anim) {
+              this.caches.anim.cancel();
+              this.caches.anim = undefined;
+          }
+          var prevPosition = this.calculateOffsets(this.elems.target.getBoundingClientRect());
+          this.elems.target = target;
+          this.reposition(animate ? prevPosition : null);
       };
       return Implementation;
   }());

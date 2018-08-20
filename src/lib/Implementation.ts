@@ -16,11 +16,11 @@ class Implementation {
   // References to DOM elements
   private elems: {
     // The passed in target to highlight
-    target: HTMLElement[],
+    target: HTMLElement,
     // The lib wrapper element
     limelight: HTMLElement,
     // The transparent 'holes' in the overlay
-    maskWindows: HTMLElement[],
+    maskWindow: HTMLElement,
   };
   private readonly options: OptionsType;
   private observer: MutationObserver;
@@ -39,9 +39,9 @@ class Implementation {
 
     this.elems = {
       // Handle querySelector or querySelectorAll
-      target: Array.isArray(target) ? Array.from(target) : [target],
+      target: target,
       limelight: undefined,
-      maskWindows: undefined,
+      maskWindow: undefined,
     };
 
     this.observer = new MutationObserver(this.mutationCallback.bind(this));
@@ -51,6 +51,7 @@ class Implementation {
     this.isOpen = false;
 
     this.caches = {
+      animations: [],
       targetQuery: {
         elems: undefined,
         result: undefined,
@@ -80,9 +81,7 @@ class Implementation {
   private renderOverlay(): string {
     return `
       <div class="limelight" id="${this.id}" aria-hidden>
-        ${this.elems.target.map((elem, i) => `
-          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}"></div>
-        `).join('')}
+        <div class="${this.id}-window limelight__window" id="${this.id}-window"></div>
       </div>
     `;
   }
@@ -113,18 +112,11 @@ class Implementation {
    * Extracts classes/ids from target elements to create a css selector.
    */
   private get targetQuery(): string {
-    if (this.caches.targetQuery.elems !== this.elems.target) {
-      this.caches.targetQuery.elems = this.elems.target;
-
-      this.caches.targetQuery.result = this.elems.target.reduce((str, elem) => {
-        const id = elem.id ? `#${elem.id}` : '';
-        const classes = [...Array.from(elem.classList)].map(x => `.${x}`).join('');
-        const targetStr = `${id}${classes}`;
-        return `${str} ${targetStr}, ${targetStr} *`;
-      }, '');
-    }
-
-    return this.caches.targetQuery.result;
+    const elem = this.elems.target;
+    const id = elem.id ? `#${elem.id}` : '';
+    const classes = [...Array.from(elem.classList)].map(x => `.${x}`).join('');
+    const targetStr = `${id}${classes}`;
+    return `${targetStr}, ${targetStr} *`;
   }
 
   /**
@@ -144,13 +136,16 @@ class Implementation {
   private init() {
     const svgElem = this.createBGElem();
     this.elems.limelight = svgElem.querySelector(`#${this.id}`);
-    this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
+    this.elems.maskWindow = svgElem.querySelector(`.${this.id}-window`);
 
     document.body.appendChild(svgElem);
 
     this.reposition();
   }
 
+  /**
+   * Returns the height of the document.
+   */
   private getPageHeight() {
     const body = document.body;
     const html = document.documentElement;
@@ -170,7 +165,7 @@ class Implementation {
   private mutationCallback(mutations: MutationEvent[]) {
     mutations.forEach(mutation => {
       // Check if the mutation is one we caused ourselves.
-      if (mutation.target !== this.elems.svg && !this.elems.maskWindows.find(target => target === mutation.target)) {
+      if (mutation.target !== this.elems.svg && !this.elems.maskWindow === mutation.target) {
         this.reposition();
       }
     });
@@ -201,26 +196,45 @@ class Implementation {
    * Destroys the instance and cleans up.
    */
   destroy() {
-    cancelAnimationFrame(this.loop);
     this.elems.limelight.parentNode.removeChild(this.elems.limelight);
   }
 
   /**
    * Resets the position on the windows.
    */
-  reposition() {
+  reposition(prevPosition) {
     this.elems.limelight.style.height = `${this.getPageHeight()}px`;
 
-    this.elems.maskWindows.forEach((mask, i) => {
-      const pos = this.calculateOffsets(
-        this.elems.target[i].getBoundingClientRect(),
-      );
+    const mask = this.elems.maskWindow;
 
-      mask.style.transform = `
-        translate(${pos.left}px, ${pos.top + window.scrollY}px)
-        scale(${pos.width}, ${pos.height})
-      `;
-    });
+    const next = this.calculateOffsets(this.elems.target.getBoundingClientRect());
+
+    mask.style.transition = '';
+    mask.style.left = `${next.left}px`;
+    mask.style.top = `${next.top + window.scrollY}px`;
+    mask.style.width = `${next.width}px`;
+    mask.style.height = `${next.height}px`;
+
+    if (prevPosition) {
+      // Invert: determine the delta between the
+      // first and last bounds to invert the element
+      const deltaX = prevPosition.left - next.left;
+      const deltaY = (prevPosition.top + window.scrollY) - (next.top + window.scrollY);
+      const deltaW = prevPosition.width / next.width;
+      const deltaH = prevPosition.height / next.height;
+
+      this.caches.anim = mask.animate(
+        [
+          {
+            transform: `translate(${deltaX}px, ${deltaY}px) scale(${deltaW}, ${deltaH})`,
+          },
+          {
+            transform: 'none',
+          },
+        ],
+        800,
+      );
+    }
   }
 
   /**
@@ -240,8 +254,8 @@ class Implementation {
 
     // If we don't encourage the listener to happen on next-tick,
     // we'll end up with the listener firing for this if it was triggered on-click.
-    // This is safeguard for when the event is not passed in and thus propgation
-    // can't be stopped.
+    // This is safeguard for when the event is not passed in and thus
+    // propagation can't be stopped.
     requestAnimationFrame(() => {
       this.reposition();
       this.elems.limelight.classList.add(this.options.classes.activeClass);
@@ -254,6 +268,13 @@ class Implementation {
    */
   close() {
     if (!this.isOpen) return;
+
+    if (this.caches.anim) {
+      this.caches.anim.cancel();
+      this.caches.anim = undefined;
+
+      console.log('cancelled cache');
+    }
 
     this.isOpen = false;
 
@@ -276,9 +297,15 @@ class Implementation {
   /**
    * Change the window focus to a different element/set of elements.
    */
-  refocus(target: TargetType) {
-    this.elems.target = Array.isArray(target) ? Array.from(target) : [target];
-    this.reposition();
+  refocus(target: TargetType, animate = false) {
+    if (this.caches.anim) {
+      this.caches.anim.cancel();
+      this.caches.anim = undefined;
+    }
+
+    const prevPosition = this.calculateOffsets(this.elems.target.getBoundingClientRect());
+    this.elems.target = target;
+    this.reposition(animate ? prevPosition: null);
   }
 }
 
