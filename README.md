@@ -1,4 +1,6 @@
-# Limelight
+# Limelight ✨
+
+![Banner image](demo/img/gh-banner.png)
 
 A tiny (and fast) JavaScript plugin that creates a spotlight around any element on the page.
 
