@@ -78,8 +78,29 @@ class Implementation {
    * Creates a string that represents gradient stop points.
    */
   private renderOverlay(): string {
+    const { styles = {} } = this.options;
+
+    /**
+     * Custom properties passed in as options are applied inline. If it has
+     * been passed in we use to to populate the array and generate the
+     * inline style attribute.
+     */
+    const inlineVars = [
+      styles.bg &&
+        `--limelight-bg: ${styles.bg}`,
+      styles.windowTransitionDuration &&
+        `--limelight-window-transition-duration: ${styles.windowTransitionDuration}`,
+      styles.zIndex &&
+        `--limelight-z-index: ${styles.zIndex}`,
+    ];
+
     return `
-      <div class="limelight" id="${this.id}" aria-hidden>
+      <div 
+        class="limelight"
+        id="${this.id}"
+        style="${inlineVars.filter(Boolean).join(' ')}"
+        aria-hidden
+      >
         ${this.elems.target.map((elem, i) => `
           <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}"></div>
         `).join('')}

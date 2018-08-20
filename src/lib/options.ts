@@ -5,6 +5,7 @@ const options: OptionsType = {
     window: 'limelight__window',
     activeClass: 'limelight--is-active',
   },
+  styles: {},
 };
 
 export interface OptionsType {
@@ -14,6 +15,11 @@ export interface OptionsType {
     window?: string,
     activeClass?: string,
   };
+  styles?: {
+    bg?: string;
+    windowTransitionDuration?: string,
+    zIndex?: number,
+  },
 }
 
 export default options;

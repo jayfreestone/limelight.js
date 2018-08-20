@@ -3,7 +3,13 @@ document.addEventListener("DOMContentLoaded", function demoInit() {
     var demoBasic = document.querySelector(".js-demo-basic");
     var trigger = demoBasic.querySelector(".js-demo-basic__trigger");
     const inst = new Limelight(
-      document.querySelector(".js-demo-basic__target")
+      document.querySelector(".js-demo-basic__target"),
+      {
+        styles: {
+          // bg: 'red',
+          // windowTransitionDuration: '4s',
+        },
+      },
     );
 
     trigger.addEventListener("click", function(e) {
@@ -42,7 +48,13 @@ document.addEventListener("DOMContentLoaded", function demoInit() {
     var target = demo.querySelector(".js-demo-goto__dest");
 
     const inst = new Limelight(
-      initial
+      initial,
+      // {
+      //   styles: {
+      //     // bg: 'red',
+      //     windowTransitionDuration: '4s',
+      //   },
+      // },
     );
 
     trigger.addEventListener("click", function(e) {

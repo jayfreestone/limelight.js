@@ -31,6 +31,7 @@
           window: 'limelight__window',
           activeClass: 'limelight--is-active',
       },
+      styles: {},
   };
 
   /*! *****************************************************************************
@@ -214,7 +215,21 @@
        */
       Implementation.prototype.renderOverlay = function () {
           var _this = this;
-          return "\n      <div class=\"limelight\" id=\"" + this.id + "\" aria-hidden>\n        " + this.elems.target.map(function (elem, i) { return "\n          <div class=\"" + _this.id + "-window limelight__window\" id=\"" + _this.id + "-window-" + i + "\"></div>\n        "; }).join('') + "\n      </div>\n    ";
+          var _a = this.options.styles, styles = _a === void 0 ? {} : _a;
+          /**
+           * Custom properties passed in as options are applied inline. If it has
+           * been passed in we use to to populate the array and generate the
+           * inline style attribute.
+           */
+          var inlineVars = [
+              styles.bg &&
+                  "--limelight-bg: " + styles.bg,
+              styles.windowTransitionDuration &&
+                  "--limelight-window-transition-duration: " + styles.windowTransitionDuration,
+              styles.zIndex &&
+                  "--limelight-z-index: " + styles.zIndex,
+          ];
+          return "\n      <div \n        class=\"limelight\"\n        id=\"" + this.id + "\"\n        style=\"" + inlineVars.filter(Boolean).join(' ') + "\"\n        aria-hidden\n      >\n        " + this.elems.target.map(function (elem, i) { return "\n          <div class=\"" + _this.id + "-window limelight__window\" id=\"" + _this.id + "-window-" + i + "\"></div>\n        "; }).join('') + "\n      </div>\n    ";
       };
       /**
        * Takes a position object and adjusts it to accommodate optional offset.
