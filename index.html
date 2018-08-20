@@ -6,58 +6,10 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Limelight</title>
     <script src="/dist/bundle.js" defer></script>
-    <script src="/src/demo.js" defer></script>
-    <link rel="stylesheet" href="/src/styles/demo.css">
+    <script src="/demo/demo.js" defer></script>
+    <link rel="stylesheet" href="/src/styles/limelight.css">
+    <link rel="stylesheet" href="/demo/demo.css">
     <link href="https://fonts.googleapis.com/css?family=Rubik:400,900" rel="stylesheet">
-    <style>
-        .site {
-            background-color: #fff;
-        }
-
-        .limelight {
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            will-change: transform;
-            z-index: 999;
-        }
-
-        .limelight--is-active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /*.limelight--is-active .limelight__window {*/
-            /*transition: transform 1s;*/
-        /*}*/
-
-        .limelight__window {
-            position: absolute;
-            transform-origin: top left;
-            width: 1px;
-            height: 1px;
-            border-radius: 4px;
-            /* Old style hack for highlighting, needed for Edge etc */
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
-        }
-
-        @supports (mix-blend-mode: hard-light) {
-            .limelight {
-                mix-blend-mode: hard-light;
-                background-color: rgba(0, 0, 0, 0.8);
-            }
-
-            .limelight__window {
-                background-color: grey;
-                box-shadow: none;
-            }
-        }
-    </style>
 </head>
 <body>
     <main class="site">
