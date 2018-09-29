@@ -17,6 +17,7 @@ export interface OptionsType {
   };
   styles?: {
     bg?: string;
+    overlayTransitionDuration?: string,
     windowTransitionDuration?: string,
     zIndex?: number,
   },

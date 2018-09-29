@@ -37,6 +37,7 @@ You can customise several options through [CSS custom properties](https://develo
 | Property | Description | Example |
 |:--|:--|:--|
 | --limelight-bg | The background colour of the overlay. | `rgba(0, 0, 0, 0.8)` |
+| --limelight-overlay-transition-duration | The transition-duration of the overlay | `0.3s` |
 | --limelight-window-transition-duration | The transition-duration on the windows (i.e. when the target changes). | `1s` |
 | --limelight-z-index | The z-index of the overlay. | `999` |
 

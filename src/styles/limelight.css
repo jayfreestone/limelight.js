@@ -1,5 +1,6 @@
 .limelight {
     --limelight-bg: rgba(0, 0, 0, 0.8);
+    --limelight-overlay-transition-duration: 0.3s;
     --limelight-window-transition-duration: 1s;
     --limelight-z-index: 999;
     position: absolute;
@@ -12,6 +13,8 @@
     pointer-events: none;
     z-index: 999;
     z-index: var(--limelight-z-index);
+    transition: opacity 0.3s, visibility 0.3s;
+    transition: opacity var(--limelight-overlay-transition-duration), visibility var(--limelight-overlay-transition-duration);
 }
 
 .limelight--is-active {

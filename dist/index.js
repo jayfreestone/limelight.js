@@ -224,6 +224,8 @@
           var inlineVars = [
               styles.bg &&
                   "--limelight-bg: " + styles.bg,
+              styles.overlayTransitionDuration &&
+                  "--limelight-overlay-transition-duration: " + styles.overlayTransitionDuration,
               styles.windowTransitionDuration &&
                   "--limelight-window-transition-duration: " + styles.windowTransitionDuration,
               styles.zIndex &&
