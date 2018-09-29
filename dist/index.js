@@ -269,7 +269,6 @@
        * Closes the overlay if the click happens outside of one of the target elements.
        */
       Implementation.prototype.handleClick = function (e) {
-          console.log('click');
           if (!this.options.closeOnClick)
               return;
           if (!e.target.matches(this.targetQuery)) {
@@ -359,11 +358,15 @@
           this.emitter.trigger(new OpenEvent());
           // If we don't encourage the listener to happen on next-tick,
           // we'll end up with the listener firing for this if it was triggered on-click.
-          // This is safeguard for when the event is not passed in and thus propgation
+          // This is safeguard for when the event is not passed in and thus propagation
           // can't be stopped.
           requestAnimationFrame(function () {
               _this.reposition();
-              _this.elems.limelight.classList.add(_this.options.classes.activeClass);
+              // Force active class to be applied after the 'paint' and calculation
+              // of the reposition, or we risk the transition happening on first load.
+              requestAnimationFrame(function () {
+                  _this.elems.limelight.classList.add(_this.options.classes.activeClass);
+              });
               _this.listeners();
           });
       };

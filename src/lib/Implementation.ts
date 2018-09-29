@@ -266,11 +266,17 @@ class Implementation {
 
     // If we don't encourage the listener to happen on next-tick,
     // we'll end up with the listener firing for this if it was triggered on-click.
-    // This is safeguard for when the event is not passed in and thus propgation
+    // This is safeguard for when the event is not passed in and thus propagation
     // can't be stopped.
     requestAnimationFrame(() => {
       this.reposition();
-      this.elems.limelight.classList.add(this.options.classes.activeClass);
+
+      // Force active class to be applied after the 'paint' and calculation
+      // of the reposition, or we risk the transition happening on first load.
+      requestAnimationFrame(() => {
+        this.elems.limelight.classList.add(this.options.classes.activeClass);
+      });
+
       this.listeners();
     });
   }
