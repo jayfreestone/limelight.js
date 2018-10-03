@@ -316,12 +316,13 @@
                   childList: true,
                   subtree: true,
               });
+              document.body.style.cursor = 'pointer';
               window.addEventListener('resize', this.reposition);
               document.addEventListener('click', this.handleClick);
           }
           else {
               this.observer.disconnect();
-              document.body.style.cursor = undefined;
+              document.body.style.cursor = '';
               window.removeEventListener('resize', this.reposition);
               document.removeEventListener('click', this.handleClick);
           }
