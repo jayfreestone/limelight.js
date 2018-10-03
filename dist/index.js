@@ -8,7 +8,7 @@
     return Object.keys(defaultOptions)
       .reduce((obj, key) => (
         Object.assign(obj, {
-          [key]: userOptions[key]
+          [key]: userOptions[key] !== undefined
             ? userOptions[key]
             : defaultOptions[key],
         })
@@ -199,6 +199,7 @@
           this.on = this.on.bind(this);
           this.open = this.open.bind(this);
           this.refocus = this.refocus.bind(this);
+          this.destroy = this.destroy.bind(this);
           this.close = this.close.bind(this);
           this.reposition = this.reposition.bind(this);
           this.handleClick = this.handleClick.bind(this);
@@ -315,8 +316,6 @@
                   childList: true,
                   subtree: true,
               });
-              // Required for iOS to handle click event
-              document.body.style.cursor = 'pointer';
               window.addEventListener('resize', this.reposition);
               document.addEventListener('click', this.handleClick);
           }

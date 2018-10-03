@@ -60,6 +60,7 @@ class Implementation {
     this.on = this.on.bind(this);
     this.open = this.open.bind(this);
     this.refocus = this.refocus.bind(this);
+    this.destroy = this.destroy.bind(this);
     this.close = this.close.bind(this);
     this.reposition = this.reposition.bind(this);
     this.handleClick = this.handleClick.bind(this);
@@ -209,9 +210,6 @@ class Implementation {
         childList: true,
         subtree: true,
       });
-
-      // Required for iOS to handle click event
-      document.body.style.cursor = 'pointer';
 
       window.addEventListener('resize', this.reposition);
       document.addEventListener('click', this.handleClick);
