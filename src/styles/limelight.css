@@ -43,12 +43,12 @@
 /**
  * If we support mix-blend-mode, prefer it over box-shadow.
  */
- @supports (mix-blend-mode: hard-light) {
+@supports (mix-blend-mode: hard-light) {
     .limelight {
         mix-blend-mode: hard-light;
         background-color: var(--limelight-bg);
     }
-     .limelight__window {
+    .limelight__window {
         background-color: grey;
         box-shadow: none;
     }

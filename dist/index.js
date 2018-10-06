@@ -316,6 +316,7 @@
                   childList: true,
                   subtree: true,
               });
+              // Required for iOS to handle click event
               document.body.style.cursor = 'pointer';
               window.addEventListener('resize', this.reposition);
               document.addEventListener('click', this.handleClick);
