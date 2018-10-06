@@ -15,6 +15,7 @@
     z-index: var(--limelight-z-index);
     transition: opacity 0.3s, visibility 0.3s;
     transition: opacity var(--limelight-overlay-transition-duration), visibility var(--limelight-overlay-transition-duration);
+    overflow: hidden;
 }
 
 .limelight--is-active {
@@ -32,24 +33,7 @@
     transform-origin: top left;
     width: 1px;
     height: 1px;
-    /**
-     * Old style hack for highlighting, needed for Edge etc.
-     * Falls back to black if custom properties not supported.
-     */
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
-    box-shadow: 0 0 0 9999px var(--limelight-bg);
+    background-color: var(--limelight-bg);
+    will-change: transform;
 }
 
-/**
- * If we support mix-blend-mode, prefer it over box-shadow.
- */
-@supports (mix-blend-mode: hard-light) {
-    .limelight {
-        mix-blend-mode: hard-light;
-        background-color: var(--limelight-bg);
-    }
-    .limelight__window {
-        background-color: grey;
-        box-shadow: none;
-    }
-}

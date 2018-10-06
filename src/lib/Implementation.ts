@@ -105,7 +105,10 @@ class Implementation {
         aria-hidden
       >
         ${this.elems.target.map((elem, i) => `
-          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}"></div>
+          <div class="${this.id}-window limelight__window limelight__window--1" id="${this.id}-window-${i}"></div>
+          <div class="${this.id}-window limelight__window limelight__window--2" id="${this.id}-window-${i}"></div>
+          <div class="${this.id}-window limelight__window limelight__window--3" id="${this.id}-window-${i}"></div>
+          <div class="${this.id}-window limelight__window limelight__window--4" id="${this.id}-window-${i}"></div>
         `).join('')}
       </div>
     `;
@@ -172,7 +175,7 @@ class Implementation {
 
     document.body.appendChild(svgElem);
 
-    this.reposition();
+    // this.reposition();
   }
 
   private getPageHeight() {
@@ -205,11 +208,11 @@ class Implementation {
    */
   private listeners(enable = true) {
     if (enable) {
-      this.observer.observe(document, {
-        attributes: true,
-        childList: true,
-        subtree: true,
-      });
+      // this.observer.observe(document, {
+      //   attributes: true,
+      //   childList: true,
+      //   subtree: true,
+      // });
 
       // Required for iOS to handle click event
       document.body.style.cursor = 'pointer';
@@ -217,7 +220,7 @@ class Implementation {
       window.addEventListener('resize', this.reposition);
       document.addEventListener('click', this.handleClick);
     } else {
-      this.observer.disconnect();
+      // this.observer.disconnect();
 
       document.body.style.cursor = '';
 
@@ -238,18 +241,44 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
+    const pageHeight = this.getPageHeight();
     this.elems.limelight.style.height = `${this.getPageHeight()}px`;
 
-    this.elems.maskWindows.forEach((mask, i) => {
-      const pos = this.calculateOffsets(
-        this.elems.target[i].getBoundingClientRect(),
-      );
+    console.log(pageHeight);
 
-      mask.style.transform = `
-        translate(${pos.left}px, ${pos.top + window.scrollY}px)
-        scale(${pos.width}, ${pos.height})
-      `;
-    });
+    const pos = this.calculateOffsets(
+      this.elems.target[0].getBoundingClientRect(),
+    );
+
+    this.elems.maskWindows[0].style.transform = `
+       translate(${pos.left}px, ${0}px)
+       scale(${pos.width}, ${pos.top + window.scrollY})
+    `;
+
+    this.elems.maskWindows[1].style.transform = `
+       translate(${pos.left}px, ${pos.top + window.scrollY + pos.height}px)
+       scale(${pos.width}, ${pageHeight - (pos.top + window.scrollY) - pos.height})
+    `;
+
+    this.elems.maskWindows[2].style.transform = `
+       scale(${pos.left}, ${pageHeight})
+    `;
+
+    this.elems.maskWindows[3].style.transform = `
+       translate(${pos.left + pos.width}px, ${0}px)
+       scale(${document.body.scrollWidth - (pos.left + pos.width)}, ${pageHeight})
+    `;
+
+    // this.elems.maskWindows.forEach((mask, i) => {
+    //   const pos = this.calculateOffsets(
+    //     this.elems.target[i].getBoundingClientRect(),
+    //   );
+    //
+    //   mask.style.transform = `
+    //     translate(${pos.left}px, ${pos.top + window.scrollY}px)
+    //     scale(${pos.width}, ${pos.height})
+    //   `;
+    // });
   }
 
   /**

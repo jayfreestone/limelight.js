@@ -232,7 +232,7 @@
               styles.zIndex &&
                   "--limelight-z-index: " + styles.zIndex,
           ];
-          return "\n      <div \n        class=\"limelight\"\n        id=\"" + this.id + "\"\n        style=\"" + inlineVars.filter(Boolean).join(' ') + "\"\n        aria-hidden\n      >\n        " + this.elems.target.map(function (elem, i) { return "\n          <div class=\"" + _this.id + "-window limelight__window\" id=\"" + _this.id + "-window-" + i + "\"></div>\n        "; }).join('') + "\n      </div>\n    ";
+          return "\n      <div \n        class=\"limelight\"\n        id=\"" + this.id + "\"\n        style=\"" + inlineVars.filter(Boolean).join(' ') + "\"\n        aria-hidden\n      >\n        " + this.elems.target.map(function (elem, i) { return "\n          <div class=\"" + _this.id + "-window limelight__window limelight__window--1\" id=\"" + _this.id + "-window-" + i + "\"></div>\n          <div class=\"" + _this.id + "-window limelight__window limelight__window--2\" id=\"" + _this.id + "-window-" + i + "\"></div>\n          <div class=\"" + _this.id + "-window limelight__window limelight__window--3\" id=\"" + _this.id + "-window-" + i + "\"></div>\n          <div class=\"" + _this.id + "-window limelight__window limelight__window--4\" id=\"" + _this.id + "-window-" + i + "\"></div>\n        "; }).join('') + "\n      </div>\n    ";
       };
       /**
        * Takes a position object and adjusts it to accommodate optional offset.
@@ -286,7 +286,7 @@
           this.elems.limelight = svgElem.querySelector("#" + this.id);
           this.elems.maskWindows = Array.from(svgElem.querySelectorAll("." + this.id + "-window"));
           document.body.appendChild(svgElem);
-          this.reposition();
+          // this.reposition();
       };
       Implementation.prototype.getPageHeight = function () {
           var body = document.body;
@@ -311,18 +311,18 @@
       Implementation.prototype.listeners = function (enable) {
           if (enable === void 0) { enable = true; }
           if (enable) {
-              this.observer.observe(document, {
-                  attributes: true,
-                  childList: true,
-                  subtree: true,
-              });
+              // this.observer.observe(document, {
+              //   attributes: true,
+              //   childList: true,
+              //   subtree: true,
+              // });
               // Required for iOS to handle click event
               document.body.style.cursor = 'pointer';
               window.addEventListener('resize', this.reposition);
               document.addEventListener('click', this.handleClick);
           }
           else {
-              this.observer.disconnect();
+              // this.observer.disconnect();
               document.body.style.cursor = '';
               window.removeEventListener('resize', this.reposition);
               document.removeEventListener('click', this.handleClick);
@@ -339,12 +339,24 @@
        * Resets the position on the windows.
        */
       Implementation.prototype.reposition = function () {
-          var _this = this;
+          var pageHeight = this.getPageHeight();
           this.elems.limelight.style.height = this.getPageHeight() + "px";
-          this.elems.maskWindows.forEach(function (mask, i) {
-              var pos = _this.calculateOffsets(_this.elems.target[i].getBoundingClientRect());
-              mask.style.transform = "\n        translate(" + pos.left + "px, " + (pos.top + window.scrollY) + "px)\n        scale(" + pos.width + ", " + pos.height + ")\n      ";
-          });
+          console.log(pageHeight);
+          var pos = this.calculateOffsets(this.elems.target[0].getBoundingClientRect());
+          this.elems.maskWindows[0].style.transform = "\n       translate(" + pos.left + "px, " + 0 + "px)\n       scale(" + pos.width + ", " + (pos.top + window.scrollY) + ")\n    ";
+          this.elems.maskWindows[1].style.transform = "\n       translate(" + pos.left + "px, " + (pos.top + window.scrollY + pos.height) + "px)\n       scale(" + pos.width + ", " + (pageHeight - (pos.top + window.scrollY) - pos.height) + ")\n    ";
+          this.elems.maskWindows[2].style.transform = "\n       scale(" + pos.left + ", " + pageHeight + ")\n    ";
+          this.elems.maskWindows[3].style.transform = "\n       translate(" + (pos.left + pos.width) + "px, " + 0 + "px)\n       scale(" + (document.body.scrollWidth - (pos.left + pos.width)) + ", " + pageHeight + ")\n    ";
+          // this.elems.maskWindows.forEach((mask, i) => {
+          //   const pos = this.calculateOffsets(
+          //     this.elems.target[i].getBoundingClientRect(),
+          //   );
+          //
+          //   mask.style.transform = `
+          //     translate(${pos.left}px, ${pos.top + window.scrollY}px)
+          //     scale(${pos.width}, ${pos.height})
+          //   `;
+          // });
       };
       /**
        * Open the overlay.
