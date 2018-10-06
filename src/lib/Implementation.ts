@@ -60,6 +60,7 @@ class Implementation {
     this.on = this.on.bind(this);
     this.open = this.open.bind(this);
     this.refocus = this.refocus.bind(this);
+    this.destroy = this.destroy.bind(this);
     this.close = this.close.bind(this);
     this.reposition = this.reposition.bind(this);
     this.handleClick = this.handleClick.bind(this);
@@ -218,7 +219,7 @@ class Implementation {
     } else {
       this.observer.disconnect();
 
-      document.body.style.cursor = undefined;
+      document.body.style.cursor = '';
 
       window.removeEventListener('resize', this.reposition);
       document.removeEventListener('click', this.handleClick);

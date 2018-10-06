@@ -8,7 +8,7 @@
     return Object.keys(defaultOptions)
       .reduce((obj, key) => (
         Object.assign(obj, {
-          [key]: userOptions[key]
+          [key]: userOptions[key] !== undefined
             ? userOptions[key]
             : defaultOptions[key],
         })
@@ -199,6 +199,7 @@
           this.on = this.on.bind(this);
           this.open = this.open.bind(this);
           this.refocus = this.refocus.bind(this);
+          this.destroy = this.destroy.bind(this);
           this.close = this.close.bind(this);
           this.reposition = this.reposition.bind(this);
           this.handleClick = this.handleClick.bind(this);
@@ -322,7 +323,7 @@
           }
           else {
               this.observer.disconnect();
-              document.body.style.cursor = undefined;
+              document.body.style.cursor = '';
               window.removeEventListener('resize', this.reposition);
               document.removeEventListener('click', this.handleClick);
           }

@@ -48,7 +48,6 @@
         mix-blend-mode: hard-light;
         background-color: var(--limelight-bg);
     }
-
     .limelight__window {
         background-color: grey;
         box-shadow: none;
