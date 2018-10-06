@@ -341,22 +341,24 @@
       Implementation.prototype.reposition = function () {
           var pageHeight = this.getPageHeight();
           this.elems.limelight.style.height = this.getPageHeight() + "px";
-          console.log(pageHeight);
-          var pos = this.calculateOffsets(this.elems.target[0].getBoundingClientRect());
-          this.elems.maskWindows[0].style.transform = "\n       translate(" + pos.left + "px, " + 0 + "px)\n       scale(" + pos.width + ", " + (pos.top + window.scrollY) + ")\n    ";
-          this.elems.maskWindows[1].style.transform = "\n       translate(" + pos.left + "px, " + (pos.top + window.scrollY + pos.height) + "px)\n       scale(" + pos.width + ", " + (pageHeight - (pos.top + window.scrollY) - pos.height) + ")\n    ";
-          this.elems.maskWindows[2].style.transform = "\n       scale(" + pos.left + ", " + pageHeight + ")\n    ";
-          this.elems.maskWindows[3].style.transform = "\n       translate(" + (pos.left + pos.width) + "px, " + 0 + "px)\n       scale(" + (document.body.scrollWidth - (pos.left + pos.width)) + ", " + pageHeight + ")\n    ";
-          // this.elems.maskWindows.forEach((mask, i) => {
-          //   const pos = this.calculateOffsets(
-          //     this.elems.target[i].getBoundingClientRect(),
-          //   );
-          //
-          //   mask.style.transform = `
-          //     translate(${pos.left}px, ${pos.top + window.scrollY}px)
-          //     scale(${pos.width}, ${pos.height})
-          //   `;
-          // });
+          var posTmp = this.calculateOffsets(this.elems.target[0].getBoundingClientRect());
+          var pos = Object.keys(posTmp)
+              .map(function (key) {
+              var _a;
+              return (_a = {},
+                  _a[key] = Math.floor(posTmp[key]),
+                  _a);
+          })
+              .reduce(function (obj, val) { return (Object.assign({}, obj, val)); }, {});
+          var maskPositions = [
+              "\n       translate(" + pos.left + "px, " + 0 + "px)\n       scale(" + pos.width + ", " + (pos.top + window.scrollY) + ")\n      ",
+              "\n       translate(" + pos.left + "px, " + (pos.top + window.scrollY + pos.height) + "px)\n       scale(" + pos.width + ", " + (pageHeight - (pos.top + window.scrollY) - pos.height) + ")\n      ",
+              "\n       scale(" + pos.left + ", " + pageHeight + ")\n      ",
+              "\n       translate(" + (pos.left + pos.width) + "px, " + 0 + "px)\n       scale(" + (document.body.scrollWidth - (pos.left + pos.width)) + ", " + pageHeight + ")\n      ",
+          ];
+          this.elems.maskWindows.forEach(function (mask, i) {
+              mask.style.transform = maskPositions[i];
+          });
       };
       /**
        * Open the overlay.

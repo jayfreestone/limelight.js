@@ -244,41 +244,39 @@ class Implementation {
     const pageHeight = this.getPageHeight();
     this.elems.limelight.style.height = `${this.getPageHeight()}px`;
 
-    console.log(pageHeight);
-
-    const pos = this.calculateOffsets(
+    const posTmp = this.calculateOffsets(
       this.elems.target[0].getBoundingClientRect(),
     );
 
-    this.elems.maskWindows[0].style.transform = `
+    const pos = Object.keys(posTmp)
+      .map(key => ({
+        [key]: Math.floor(posTmp[key]),
+      }))
+      .reduce((obj, val) => (
+        Object.assign({}, obj, val)
+      ), {});
+
+    const maskPositions = [
+      `
        translate(${pos.left}px, ${0}px)
        scale(${pos.width}, ${pos.top + window.scrollY})
-    `;
-
-    this.elems.maskWindows[1].style.transform = `
+      `,
+      `
        translate(${pos.left}px, ${pos.top + window.scrollY + pos.height}px)
        scale(${pos.width}, ${pageHeight - (pos.top + window.scrollY) - pos.height})
-    `;
-
-    this.elems.maskWindows[2].style.transform = `
+      `,
+      `
        scale(${pos.left}, ${pageHeight})
-    `;
-
-    this.elems.maskWindows[3].style.transform = `
+      `,
+      `
        translate(${pos.left + pos.width}px, ${0}px)
        scale(${document.body.scrollWidth - (pos.left + pos.width)}, ${pageHeight})
-    `;
+      `,
+    ];
 
-    // this.elems.maskWindows.forEach((mask, i) => {
-    //   const pos = this.calculateOffsets(
-    //     this.elems.target[i].getBoundingClientRect(),
-    //   );
-    //
-    //   mask.style.transform = `
-    //     translate(${pos.left}px, ${pos.top + window.scrollY}px)
-    //     scale(${pos.width}, ${pos.height})
-    //   `;
-    // });
+    this.elems.maskWindows.forEach((mask, i) => {
+      mask.style.transform = maskPositions[i];
+    });
   }
 
   /**
