@@ -27,6 +27,11 @@
     transition: transform var(--limelight-window-transition-duration);
 }
 
+/*.limelight canvas {*/
+    /*width: 100%;*/
+    /*height: 100%;*/
+/*}*/
+
 .limelight__window {
     position: absolute;
     transform-origin: top left;
@@ -36,20 +41,20 @@
      * Old style hack for highlighting, needed for Edge etc.
      * Falls back to black if custom properties not supported.
      */
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
-    box-shadow: 0 0 0 9999px var(--limelight-bg);
+    /*box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);*/
+    /*box-shadow: 0 0 0 9999px var(--limelight-bg);*/
 }
 
 /**
  * If we support mix-blend-mode, prefer it over box-shadow.
  */
-@supports (mix-blend-mode: hard-light) {
-    .limelight {
-        mix-blend-mode: hard-light;
-        background-color: var(--limelight-bg);
-    }
-    .limelight__window {
-        background-color: grey;
-        box-shadow: none;
-    }
-}
+/*@supports (mix-blend-mode: hard-light) {*/
+    /*.limelight {*/
+        /*mix-blend-mode: hard-light;*/
+        /*background-color: var(--limelight-bg);*/
+    /*}*/
+    /*.limelight__window {*/
+        /*background-color: grey;*/
+        /*box-shadow: none;*/
+    /*}*/
+/*}*/

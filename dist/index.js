@@ -187,7 +187,7 @@
               limelight: undefined,
               maskWindows: undefined,
           };
-          this.observer = new MutationObserver(this.mutationCallback.bind(this));
+          // this.observer = new MutationObserver(this.mutationCallback.bind(this));
           this.options = u.mergeOptions(options, options$$1);
           this.isOpen = false;
           this.caches = {
@@ -215,7 +215,6 @@
        * Creates a string that represents gradient stop points.
        */
       Implementation.prototype.renderOverlay = function () {
-          var _this = this;
           var _a = this.options.styles, styles = _a === void 0 ? {} : _a;
           /**
            * Custom properties passed in as options are applied inline. If it has
@@ -232,7 +231,7 @@
               styles.zIndex &&
                   "--limelight-z-index: " + styles.zIndex,
           ];
-          return "\n      <div \n        class=\"limelight\"\n        id=\"" + this.id + "\"\n        style=\"" + inlineVars.filter(Boolean).join(' ') + "\"\n        aria-hidden\n      >\n        " + this.elems.target.map(function (elem, i) { return "\n          <div class=\"" + _this.id + "-window limelight__window\" id=\"" + _this.id + "-window-" + i + "\"></div>\n        "; }).join('') + "\n      </div>\n    ";
+          return "\n      <div \n        class=\"limelight\"\n        id=\"" + this.id + "\"\n        style=\"" + inlineVars.filter(Boolean).join(' ') + "\"\n        aria-hidden\n      >\n        <canvas></canvas>\n      </div>\n    ";
       };
       /**
        * Takes a position object and adjusts it to accommodate optional offset.
@@ -284,26 +283,61 @@
       Implementation.prototype.init = function () {
           var svgElem = this.createBGElem();
           this.elems.limelight = svgElem.querySelector("#" + this.id);
-          this.elems.maskWindows = Array.from(svgElem.querySelectorAll("." + this.id + "-window"));
+          this.elems.canvas = svgElem.querySelector('canvas');
+          this.elems.ctx = this.elems.canvas.getContext('2d');
+          // this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
           document.body.appendChild(svgElem);
           this.reposition();
+      };
+      Implementation.prototype.animLoop = function () {
+          var _this = this;
+          this.elems.limelight.style.height = this.getPageHeight() + "px";
+          this.elems.canvas.setAttribute('height', this.getPageHeight());
+          this.elems.canvas.setAttribute('width', this.getPageWidth());
+          this.elems.ctx.globalCompositeOperation = 'xor';
+          console.log('running anim loop');
+          // this.elems.ctx.fillStyle = 'rgb(0, 0, 0)';
+          // this.elems.ctx.fillRect(0, 0, '100%', '100%');
+          this.elems.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          this.elems.ctx.fillRect(0, 0, this.getPageWidth(), this.getPageHeight());
+          this.elems.target.forEach(function (target, i) {
+              var pos = _this.calculateOffsets(target.getBoundingClientRect());
+              _this.elems.ctx.fillStyle = '#fff';
+              _this.elems.ctx.fillRect(Math.floor(pos.left), Math.floor(pos.top), Math.floor(pos.width), Math.floor(pos.height));
+              // this.elems.ctx.rect(
+              //   Math.floor(pos.left),
+              //   Math.floor(pos.top),
+              //   Math.floor(pos.width),
+              //   Math.floor(pos.height),
+              // );
+              // this.elems.ctx.stroke();
+              // this.elems.ctx.clip();
+              // mask.style.transform = `
+              //   translate(${pos.left}px, ${pos.top + window.scrollY}px)
+              //   scale(${pos.width}, ${pos.height})
+              // `;
+          });
       };
       Implementation.prototype.getPageHeight = function () {
           var body = document.body;
           var html = document.documentElement;
           return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
       };
+      Implementation.prototype.getPageWidth = function () {
+          var body = document.body;
+          var html = document.documentElement;
+          return Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
+      };
       /**
        * MutationObserver callback.
        */
       Implementation.prototype.mutationCallback = function (mutations) {
-          var _this = this;
-          mutations.forEach(function (mutation) {
-              // Check if the mutation is one we caused ourselves.
-              if (mutation.target !== _this.elems.svg && !_this.elems.maskWindows.find(function (target) { return target === mutation.target; })) {
-                  _this.reposition();
-              }
-          });
+          // mutations.forEach(mutation => {
+          //   // Check if the mutation is one we caused ourselves.
+          //   if (mutation.target !== this.elems.svg && !this.elems.maskWindows.find(target => target === mutation.target)) {
+          //     this.reposition();
+          //   }
+          // });
       };
       /**
        * Enables/disables event listeners.
@@ -311,18 +345,18 @@
       Implementation.prototype.listeners = function (enable) {
           if (enable === void 0) { enable = true; }
           if (enable) {
-              this.observer.observe(document, {
-                  attributes: true,
-                  childList: true,
-                  subtree: true,
-              });
+              // this.observer.observe(document, {
+              //   attributes: true,
+              //   childList: true,
+              //   subtree: true,
+              // });
               // Required for iOS to handle click event
               document.body.style.cursor = 'pointer';
               window.addEventListener('resize', this.reposition);
               document.addEventListener('click', this.handleClick);
           }
           else {
-              this.observer.disconnect();
+              // this.observer.disconnect();
               document.body.style.cursor = '';
               window.removeEventListener('resize', this.reposition);
               document.removeEventListener('click', this.handleClick);
@@ -339,12 +373,18 @@
        * Resets the position on the windows.
        */
       Implementation.prototype.reposition = function () {
-          var _this = this;
-          this.elems.limelight.style.height = this.getPageHeight() + "px";
-          this.elems.maskWindows.forEach(function (mask, i) {
-              var pos = _this.calculateOffsets(_this.elems.target[i].getBoundingClientRect());
-              mask.style.transform = "\n        translate(" + pos.left + "px, " + (pos.top + window.scrollY) + "px)\n        scale(" + pos.width + ", " + pos.height + ")\n      ";
-          });
+          // this.elems.limelight.style.height = `${this.getPageHeight()}px`;
+          requestAnimationFrame(this.animLoop.bind(this));
+          // this.elems.maskWindows.forEach((mask, i) => {
+          //   const pos = this.calculateOffsets(
+          //     this.elems.target[i].getBoundingClientRect(),
+          //   );
+          //
+          //   mask.style.transform = `
+          //     translate(${pos.left}px, ${pos.top + window.scrollY}px)
+          //     scale(${pos.width}, ${pos.height})
+          //   `;
+          // });
       };
       /**
        * Open the overlay.

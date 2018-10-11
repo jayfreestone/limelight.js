@@ -44,7 +44,7 @@ class Implementation {
       maskWindows: undefined,
     };
 
-    this.observer = new MutationObserver(this.mutationCallback.bind(this));
+    // this.observer = new MutationObserver(this.mutationCallback.bind(this));
 
     this.options = u.mergeOptions(defaultOptions, options);
 
@@ -104,9 +104,7 @@ class Implementation {
         style="${inlineVars.filter(Boolean).join(' ')}"
         aria-hidden
       >
-        ${this.elems.target.map((elem, i) => `
-          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}"></div>
-        `).join('')}
+        <canvas></canvas>
       </div>
     `;
   }
@@ -168,11 +166,59 @@ class Implementation {
   private init() {
     const svgElem = this.createBGElem();
     this.elems.limelight = svgElem.querySelector(`#${this.id}`);
-    this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
+    this.elems.canvas = svgElem.querySelector('canvas');
+    this.elems.ctx = this.elems.canvas.getContext('2d');
+    // this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
 
     document.body.appendChild(svgElem);
 
+
     this.reposition();
+  }
+
+  animLoop() {
+    this.elems.limelight.style.height = `${this.getPageHeight()}px`;
+    this.elems.canvas.setAttribute('height', this.getPageHeight());
+    this.elems.canvas.setAttribute('width', this.getPageWidth());
+
+    this.elems.ctx.globalCompositeOperation = 'xor';
+
+    console.log('running anim loop');
+    // this.elems.ctx.fillStyle = 'rgb(0, 0, 0)';
+    // this.elems.ctx.fillRect(0, 0, '100%', '100%');
+
+    this.elems.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.elems.ctx.fillRect(0, 0, this.getPageWidth(), this.getPageHeight());
+
+    this.elems.target.forEach((target, i) => {
+      const pos = this.calculateOffsets(
+        target.getBoundingClientRect(),
+      );
+
+      this.elems.ctx.fillStyle = '#fff';
+
+      this.elems.ctx.fillRect(
+        Math.floor(pos.left),
+        Math.floor(pos.top),
+        Math.floor(pos.width),
+        Math.floor(pos.height),
+      );
+
+      // this.elems.ctx.rect(
+      //   Math.floor(pos.left),
+      //   Math.floor(pos.top),
+      //   Math.floor(pos.width),
+      //   Math.floor(pos.height),
+      // );
+
+      // this.elems.ctx.stroke();
+      // this.elems.ctx.clip();
+
+      // mask.style.transform = `
+      //   translate(${pos.left}px, ${pos.top + window.scrollY}px)
+      //   scale(${pos.width}, ${pos.height})
+      // `;
+    });
   }
 
   private getPageHeight() {
@@ -188,16 +234,29 @@ class Implementation {
     );
   }
 
+  private getPageWidth() {
+    const body = document.body;
+    const html = document.documentElement;
+
+    return Math.max(
+      body.scrollWidth,
+      body.offsetWidth,
+      html.clientWidth,
+      html.scrollWidth,
+      html.offsetWidth,
+    );
+  }
+
   /**
    * MutationObserver callback.
    */
   private mutationCallback(mutations: MutationEvent[]) {
-    mutations.forEach(mutation => {
-      // Check if the mutation is one we caused ourselves.
-      if (mutation.target !== this.elems.svg && !this.elems.maskWindows.find(target => target === mutation.target)) {
-        this.reposition();
-      }
-    });
+    // mutations.forEach(mutation => {
+    //   // Check if the mutation is one we caused ourselves.
+    //   if (mutation.target !== this.elems.svg && !this.elems.maskWindows.find(target => target === mutation.target)) {
+    //     this.reposition();
+    //   }
+    // });
   }
 
   /**
@@ -205,11 +264,11 @@ class Implementation {
    */
   private listeners(enable = true) {
     if (enable) {
-      this.observer.observe(document, {
-        attributes: true,
-        childList: true,
-        subtree: true,
-      });
+      // this.observer.observe(document, {
+      //   attributes: true,
+      //   childList: true,
+      //   subtree: true,
+      // });
 
       // Required for iOS to handle click event
       document.body.style.cursor = 'pointer';
@@ -217,7 +276,7 @@ class Implementation {
       window.addEventListener('resize', this.reposition);
       document.addEventListener('click', this.handleClick);
     } else {
-      this.observer.disconnect();
+      // this.observer.disconnect();
 
       document.body.style.cursor = '';
 
@@ -238,18 +297,19 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
-    this.elems.limelight.style.height = `${this.getPageHeight()}px`;
+    // this.elems.limelight.style.height = `${this.getPageHeight()}px`;
+    requestAnimationFrame(this.animLoop.bind(this));
 
-    this.elems.maskWindows.forEach((mask, i) => {
-      const pos = this.calculateOffsets(
-        this.elems.target[i].getBoundingClientRect(),
-      );
-
-      mask.style.transform = `
-        translate(${pos.left}px, ${pos.top + window.scrollY}px)
-        scale(${pos.width}, ${pos.height})
-      `;
-    });
+    // this.elems.maskWindows.forEach((mask, i) => {
+    //   const pos = this.calculateOffsets(
+    //     this.elems.target[i].getBoundingClientRect(),
+    //   );
+    //
+    //   mask.style.transform = `
+    //     translate(${pos.left}px, ${pos.top + window.scrollY}px)
+    //     scale(${pos.width}, ${pos.height})
+    //   `;
+    // });
   }
 
   /**
