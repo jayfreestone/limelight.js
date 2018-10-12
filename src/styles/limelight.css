@@ -1,5 +1,5 @@
 .limelight {
-    --limelight-bg: rgba(0, 0, 0, 0.8);
+    --limelight-bg: black;
     --limelight-overlay-transition-duration: 0.3s;
     --limelight-window-transition-duration: 1s;
     --limelight-z-index: 999;

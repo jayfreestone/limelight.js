@@ -17,6 +17,8 @@ class Implementation {
   private elems: {
     // The passed in target to highlight
     target: HTMLElement[],
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
     // The lib wrapper element
     limelight: HTMLElement,
     // The transparent 'holes' in the overlay
@@ -25,6 +27,7 @@ class Implementation {
   private readonly options: OptionsType;
   private observer: MutationObserver;
   private isOpen: boolean;
+  private loop: any;
   private caches: {
     targetQuery: {
       elems: undefined|TargetType,
@@ -40,6 +43,8 @@ class Implementation {
     this.elems = {
       // Handle querySelector or querySelectorAll
       target: Array.isArray(target) ? Array.from(target) : [target],
+      canvas: undefined,
+      ctx: undefined,
       limelight: undefined,
       maskWindows: undefined,
     };
@@ -64,7 +69,7 @@ class Implementation {
     this.close = this.close.bind(this);
     this.reposition = this.reposition.bind(this);
     this.handleClick = this.handleClick.bind(this);
-    this.animLoop = this.animLoop.bind(this);
+    this.tick = this.tick.bind(this);
 
     this.init();
   }
@@ -169,20 +174,15 @@ class Implementation {
     this.elems.limelight = svgElem.querySelector(`#${this.id}`);
     this.elems.canvas = svgElem.querySelector('canvas');
     this.elems.ctx = this.elems.canvas.getContext('2d');
-    // this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
 
     document.body.appendChild(svgElem);
 
-    this.elems.canvas.setAttribute('height', this.elems.limelight.offsetHeight);
-    this.elems.canvas.setAttribute('width', this.elems.limelight.offsetWidth);
-    this.elems.ctx.globalCompositeOperation = 'xor';
+    this.reposition();
   }
 
-  animLoop() {
-    console.log('running anim loop');
+  tick() {
+    this.elems.ctx.globalCompositeOperation = 'xor';
     this.elems.ctx.clearRect(0, 0, this.elems.canvas.width, this.elems.canvas.height);
-    // this.elems.ctx.fillStyle = 'rgb(0, 0, 0)';
-    // this.elems.ctx.fillRect(0, 0, '100%', '100%');
 
     this.elems.ctx.fillStyle = 'rgba(0, 0, 0, 1)';
     this.elems.ctx.fillRect(0, 0, this.getPageWidth(), this.getPageHeight());
@@ -200,24 +200,9 @@ class Implementation {
         Math.floor(pos.width),
         Math.floor(pos.height),
       );
-
-      // this.elems.ctx.rect(
-      //   Math.floor(pos.left),
-      //   Math.floor(pos.top),
-      //   Math.floor(pos.width),
-      //   Math.floor(pos.height),
-      // );
-
-      // this.elems.ctx.stroke();
-      // this.elems.ctx.clip();
-
-      // mask.style.transform = `
-      //   translate(${pos.left}px, ${pos.top + window.scrollY}px)
-      //   scale(${pos.width}, ${pos.height})
-      // `;
     });
 
-    requestAnimationFrame(this.animLoop);
+    this.loop = requestAnimationFrame(this.tick);
   }
 
   private getPageHeight() {
@@ -296,19 +281,8 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
-    // this.elems.limelight.style.height = `${this.getPageHeight()}px`;
-    requestAnimationFrame(this.animLoop);
-
-    // this.elems.maskWindows.forEach((mask, i) => {
-    //   const pos = this.calculateOffsets(
-    //     this.elems.target[i].getBoundingClientRect(),
-    //   );
-    //
-    //   mask.style.transform = `
-    //     translate(${pos.left}px, ${pos.top + window.scrollY}px)
-    //     scale(${pos.width}, ${pos.height})
-    //   `;
-    // });
+    this.elems.canvas.setAttribute('height', this.elems.limelight.offsetHeight);
+    this.elems.canvas.setAttribute('width', this.elems.limelight.offsetWidth);
   }
 
   /**
@@ -331,7 +305,7 @@ class Implementation {
     // This is safeguard for when the event is not passed in and thus propagation
     // can't be stopped.
     requestAnimationFrame(() => {
-      this.animLoop();
+      this.loop = this.tick();
 
       // Force active class to be applied after the 'paint' and calculation
       // of the reposition, or we risk the transition happening on first load.
@@ -356,6 +330,8 @@ class Implementation {
     this.emitter.trigger(new CloseEvent());
 
     this.listeners(false);
+
+    cancelAnimationFrame(this.loop);
   }
 
   /**
@@ -369,6 +345,10 @@ class Implementation {
    * Change the window focus to a different element/set of elements.
    */
   refocus(target: TargetType) {
+    this.start = this.calculateOffsets(
+      target.getBoundingClientRect(),
+    );
+
     this.elems.target = Array.isArray(target) ? Array.from(target) : [target];
     // this.reposition();
   }
