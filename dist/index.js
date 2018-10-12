@@ -203,6 +203,7 @@
           this.close = this.close.bind(this);
           this.reposition = this.reposition.bind(this);
           this.handleClick = this.handleClick.bind(this);
+          this.animLoop = this.animLoop.bind(this);
           this.init();
       }
       /**
@@ -287,18 +288,17 @@
           this.elems.ctx = this.elems.canvas.getContext('2d');
           // this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
           document.body.appendChild(svgElem);
-          this.reposition();
+          this.elems.canvas.setAttribute('height', this.elems.limelight.offsetHeight);
+          this.elems.canvas.setAttribute('width', this.elems.limelight.offsetWidth);
+          this.elems.ctx.globalCompositeOperation = 'xor';
       };
       Implementation.prototype.animLoop = function () {
           var _this = this;
-          this.elems.limelight.style.height = this.getPageHeight() + "px";
-          this.elems.canvas.setAttribute('height', this.getPageHeight());
-          this.elems.canvas.setAttribute('width', this.getPageWidth());
-          this.elems.ctx.globalCompositeOperation = 'xor';
           console.log('running anim loop');
+          this.elems.ctx.clearRect(0, 0, this.elems.canvas.width, this.elems.canvas.height);
           // this.elems.ctx.fillStyle = 'rgb(0, 0, 0)';
           // this.elems.ctx.fillRect(0, 0, '100%', '100%');
-          this.elems.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          this.elems.ctx.fillStyle = 'rgba(0, 0, 0, 1)';
           this.elems.ctx.fillRect(0, 0, this.getPageWidth(), this.getPageHeight());
           this.elems.target.forEach(function (target, i) {
               var pos = _this.calculateOffsets(target.getBoundingClientRect());
@@ -317,6 +317,7 @@
               //   scale(${pos.width}, ${pos.height})
               // `;
           });
+          requestAnimationFrame(this.animLoop);
       };
       Implementation.prototype.getPageHeight = function () {
           var body = document.body;
@@ -374,7 +375,7 @@
        */
       Implementation.prototype.reposition = function () {
           // this.elems.limelight.style.height = `${this.getPageHeight()}px`;
-          requestAnimationFrame(this.animLoop.bind(this));
+          requestAnimationFrame(this.animLoop);
           // this.elems.maskWindows.forEach((mask, i) => {
           //   const pos = this.calculateOffsets(
           //     this.elems.target[i].getBoundingClientRect(),
@@ -404,7 +405,7 @@
           // This is safeguard for when the event is not passed in and thus propagation
           // can't be stopped.
           requestAnimationFrame(function () {
-              _this.reposition();
+              _this.animLoop();
               // Force active class to be applied after the 'paint' and calculation
               // of the reposition, or we risk the transition happening on first load.
               requestAnimationFrame(function () {
@@ -421,7 +422,6 @@
               return;
           this.isOpen = false;
           this.elems.limelight.classList.remove(this.options.classes.activeClass);
-          this.elems.limelight.style.height = this.getPageHeight() + "px";
           this.emitter.trigger(new CloseEvent());
           this.listeners(false);
       };
@@ -436,7 +436,7 @@
        */
       Implementation.prototype.refocus = function (target) {
           this.elems.target = Array.isArray(target) ? Array.from(target) : [target];
-          this.reposition();
+          // this.reposition();
       };
       return Implementation;
   }());

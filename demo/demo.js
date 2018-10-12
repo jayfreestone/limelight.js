@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function demoInit() {
       // },
     );
 
-    inst.open();
+    // inst.open();
 
     trigger.addEventListener("click", function(e) {
       e.preventDefault();

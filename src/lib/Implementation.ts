@@ -64,6 +64,7 @@ class Implementation {
     this.close = this.close.bind(this);
     this.reposition = this.reposition.bind(this);
     this.handleClick = this.handleClick.bind(this);
+    this.animLoop = this.animLoop.bind(this);
 
     this.init();
   }
@@ -172,22 +173,18 @@ class Implementation {
 
     document.body.appendChild(svgElem);
 
-
-    this.reposition();
+    this.elems.canvas.setAttribute('height', this.elems.limelight.offsetHeight);
+    this.elems.canvas.setAttribute('width', this.elems.limelight.offsetWidth);
+    this.elems.ctx.globalCompositeOperation = 'xor';
   }
 
   animLoop() {
-    this.elems.limelight.style.height = `${this.getPageHeight()}px`;
-    this.elems.canvas.setAttribute('height', this.getPageHeight());
-    this.elems.canvas.setAttribute('width', this.getPageWidth());
-
-    this.elems.ctx.globalCompositeOperation = 'xor';
-
     console.log('running anim loop');
+    this.elems.ctx.clearRect(0, 0, this.elems.canvas.width, this.elems.canvas.height);
     // this.elems.ctx.fillStyle = 'rgb(0, 0, 0)';
     // this.elems.ctx.fillRect(0, 0, '100%', '100%');
 
-    this.elems.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.elems.ctx.fillStyle = 'rgba(0, 0, 0, 1)';
     this.elems.ctx.fillRect(0, 0, this.getPageWidth(), this.getPageHeight());
 
     this.elems.target.forEach((target, i) => {
@@ -219,6 +216,8 @@ class Implementation {
       //   scale(${pos.width}, ${pos.height})
       // `;
     });
+
+    requestAnimationFrame(this.animLoop);
   }
 
   private getPageHeight() {
@@ -298,7 +297,7 @@ class Implementation {
    */
   reposition() {
     // this.elems.limelight.style.height = `${this.getPageHeight()}px`;
-    requestAnimationFrame(this.animLoop.bind(this));
+    requestAnimationFrame(this.animLoop);
 
     // this.elems.maskWindows.forEach((mask, i) => {
     //   const pos = this.calculateOffsets(
@@ -332,7 +331,7 @@ class Implementation {
     // This is safeguard for when the event is not passed in and thus propagation
     // can't be stopped.
     requestAnimationFrame(() => {
-      this.reposition();
+      this.animLoop();
 
       // Force active class to be applied after the 'paint' and calculation
       // of the reposition, or we risk the transition happening on first load.
@@ -354,8 +353,6 @@ class Implementation {
 
     this.elems.limelight.classList.remove(this.options.classes.activeClass);
 
-    this.elems.limelight.style.height = `${this.getPageHeight()}px`;
-
     this.emitter.trigger(new CloseEvent());
 
     this.listeners(false);
@@ -373,7 +370,7 @@ class Implementation {
    */
   refocus(target: TargetType) {
     this.elems.target = Array.isArray(target) ? Array.from(target) : [target];
-    this.reposition();
+    // this.reposition();
   }
 }
 
