@@ -56,6 +56,8 @@ class Implementation {
     this.isOpen = false;
 
     this.caches = {
+      targetPosition: undefined,
+      canvasPosition: undefined,
       targetQuery: {
         elems: undefined,
         result: undefined,
@@ -192,6 +194,16 @@ class Implementation {
         target.getBoundingClientRect(),
       );
 
+
+      if (this.caches.canvasPosition) {
+        console.log(this.caches.canvasPosition.top, pos.top);
+        if (pos.top > this.caches.canvasPosition.top) {
+          console.log('updating top position to:')
+          pos.top = this.caches.canvasPosition.top + 2;
+        }
+      }
+
+
       this.elems.ctx.fillStyle = '#fff';
 
       this.elems.ctx.fillRect(
@@ -200,6 +212,8 @@ class Implementation {
         Math.floor(pos.width),
         Math.floor(pos.height),
       );
+
+      this.caches.canvasPosition = pos;
     });
 
     this.loop = requestAnimationFrame(this.tick);
