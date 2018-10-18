@@ -293,6 +293,21 @@
           document.body.appendChild(svgElem);
           this.reposition();
       };
+      Implementation.prototype.advancePosition = function (current, target) {
+          if (!current)
+              return;
+          return Object.keys(current).forEach(function (measurment) {
+              var _a, _b;
+              if (Math.floor(target[measurment]) !== Math.floor(current[measurment])) {
+                  return _a = {},
+                      _a[measurment] = target[measurment] = target[measurment] > current[measurment]
+                          ? current[measurment] + 1
+                          : current[measurment] - 1,
+                      _a;
+              }
+              return _b = {}, _b[measurment] = current[measurment], _b;
+          });
+      };
       Implementation.prototype.tick = function () {
           var _this = this;
           this.elems.ctx.globalCompositeOperation = 'xor';
@@ -300,14 +315,9 @@
           this.elems.ctx.fillStyle = 'rgba(0, 0, 0, 1)';
           this.elems.ctx.fillRect(0, 0, this.getPageWidth(), this.getPageHeight());
           this.elems.target.forEach(function (target, i) {
-              var pos = _this.calculateOffsets(target.getBoundingClientRect());
-              if (_this.caches.canvasPosition) {
-                  console.log(_this.caches.canvasPosition.top, pos.top);
-                  if (pos.top > _this.caches.canvasPosition.top) {
-                      console.log('updating top position to:');
-                      pos.top = _this.caches.canvasPosition.top + 2;
-                  }
-              }
+              var targetPos = _this.calculateOffsets(target.getBoundingClientRect());
+              var pos = _this.advancePosition(_this.caches.canvasPosition, targetPos) || targetPos;
+              console.log(pos);
               _this.elems.ctx.fillStyle = '#fff';
               _this.elems.ctx.fillRect(Math.floor(pos.left), Math.floor(pos.top), Math.floor(pos.width), Math.floor(pos.height));
               _this.caches.canvasPosition = pos;

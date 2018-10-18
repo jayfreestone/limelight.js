@@ -182,6 +182,22 @@ class Implementation {
     this.reposition();
   }
 
+  advancePosition(current, target) {
+    if (!current) return;
+
+    return Object.keys(current).forEach((measurment) => {
+      if (Math.floor(target[measurment]) !== Math.floor(current[measurment])) {
+        return {
+          [measurment]: target[measurment] = target[measurment] > current[measurment]
+          ? current[measurment] + 1
+          : current[measurment] - 1,
+        };
+      }
+
+      return { [measurment]: current[measurment] };
+    });
+  }
+
   tick() {
     this.elems.ctx.globalCompositeOperation = 'xor';
     this.elems.ctx.clearRect(0, 0, this.elems.canvas.width, this.elems.canvas.height);
@@ -190,19 +206,13 @@ class Implementation {
     this.elems.ctx.fillRect(0, 0, this.getPageWidth(), this.getPageHeight());
 
     this.elems.target.forEach((target, i) => {
-      const pos = this.calculateOffsets(
+      const targetPos = this.calculateOffsets(
         target.getBoundingClientRect(),
       );
 
+      const pos = this.advancePosition(this.caches.canvasPosition, targetPos) || targetPos;
 
-      if (this.caches.canvasPosition) {
-        console.log(this.caches.canvasPosition.top, pos.top);
-        if (pos.top > this.caches.canvasPosition.top) {
-          console.log('updating top position to:')
-          pos.top = this.caches.canvasPosition.top + 2;
-        }
-      }
-
+      console.log(pos);
 
       this.elems.ctx.fillStyle = '#fff';
 
