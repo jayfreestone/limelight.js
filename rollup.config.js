@@ -21,9 +21,11 @@ export default {
     typescript({
       abortOnError: false,
     }),
-    browsersync({
-      server: '.',
-      files: ['dist/**/*.*', 'src/styles/*.css', '*.html'],
-    }),
+    ...(process.env.BUILD !== 'production' ? [
+      browsersync({
+        server: '.',
+        files: ['dist/**/*.*', 'src/styles/*.css', '*.html'],
+      }),
+    ] : []),
   ],
 };

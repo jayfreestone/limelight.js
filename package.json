@@ -7,7 +7,7 @@
   "browser": "dist/index.js",
   "style": "src/styles/limelight.css",
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c --environment BUILD:production",
     "dev": "rollup -c -w"
   },
   "author": "",
