@@ -219,7 +219,6 @@ class Implementation {
    * Destroys the instance and cleans up.
    */
   destroy() {
-    cancelAnimationFrame(this.loop);
     this.elems.limelight.parentNode.removeChild(this.elems.limelight);
   }
 

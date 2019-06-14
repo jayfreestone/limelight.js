@@ -328,7 +328,6 @@
        * Destroys the instance and cleans up.
        */
       Implementation.prototype.destroy = function () {
-          cancelAnimationFrame(this.loop);
           this.elems.limelight.parentNode.removeChild(this.elems.limelight);
       };
       /**
