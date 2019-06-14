@@ -107,14 +107,22 @@ class Implementation {
         aria-hidden
       >
         ${this.elems.target.map((elem, i) => `
-          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}">
-            <div class="${this.id}-window-corner limelight__window-corner" id="${this.id}-window-corner-${i}-1"></div>
-            <div class="${this.id}-window-corner limelight__window-corner" id="${this.id}-window-corner-${i}-2"></div>
-            <div class="${this.id}-window-corner limelight__window-corner" id="${this.id}-window-corner-${i}-3"></div>
-            <div class="${this.id}-window-corner limelight__window-corner" id="${this.id}-window-corner-${i}-4"></div>
-
-            <div class="${this.id}-window-frame limelight__window-frame" id="${this.id}-window-frame-${i}-1"></div>
-            <div class="${this.id}-window-frame limelight__window-frame" id="${this.id}-window-frame-${i}-2"></div>
+          <div
+            class="${this.id}-window limelight__window"
+            id="${this.id}-window-${i}"
+          >
+            ${u.generateIndexArr(4).map(windowNum => `
+              <div
+                class="${this.id}-window-corner limelight__window-corner"
+                id="${this.id}-window-corner-${i}-${windowNum}"
+              ></div>
+            `).join('')}
+            ${u.generateIndexArr(2).map(frameNum => `
+              <div
+                class="${this.id}-window-frame limelight__window-frame"
+                id="${this.id}-window-frame-${i}-${frameNum}"
+              ></div>
+            `).join('')}
           </div>
         `).join('')}
       </div>
