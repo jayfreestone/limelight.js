@@ -1,4 +1,5 @@
 import typescript from 'rollup-plugin-typescript2';
+import { terser } from 'rollup-plugin-terser';
 import browsersync from 'rollup-plugin-browsersync';
 import pkg from './package.json';
 
@@ -20,6 +21,8 @@ export default {
         server: '.',
         files: ['dist/**/*.*', 'src/styles/*.css', '*.html'],
       }),
-    ] : []),
+    ] : [
+      terser(),
+    ]),
   ],
 };

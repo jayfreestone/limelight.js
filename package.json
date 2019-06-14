@@ -27,7 +27,6 @@
     "rollup-plugin-browsersync": "^1.0.0",
     "rollup-plugin-terser": "^5.0.0",
     "rollup-plugin-typescript2": "^0.16.1",
-    "rollup-plugin-uglify": "^4.0.0",
     "typescript": "^2.9.2"
   },
   "keywords": [
