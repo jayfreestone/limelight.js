@@ -5,7 +5,7 @@
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.js",
-  "style": "src/styles/limelight.css",
+  "style": "styles/limelight.css",
   "scripts": {
     "build": "rollup -c --environment BUILD:production",
     "dev": "rollup -c -w"

@@ -19,7 +19,7 @@ export default {
     ...(process.env.BUILD !== 'production' ? [
       browsersync({
         server: '.',
-        files: ['dist/**/*.*', 'src/styles/*.css', '*.html'],
+        files: ['dist/**/*.*', 'styles/*.css', '*.html'],
       }),
     ] : [
       terser(),
