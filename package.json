@@ -1,7 +1,7 @@
 {
-  "name": "limelight",
+  "name": "limelight-js",
   "version": "0.0.0-semantically-released",
-  "description": "",
+  "description": "A tiny (and fast) JavaScript plugin that creates a spotlight around any element on the page.",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.js",
@@ -10,7 +10,11 @@
     "build": "rollup -c --environment BUILD:production",
     "dev": "rollup -c -w"
   },
-  "author": "",
+  "author": {
+    "name": "Jay Freestone",
+    "email": "mail@jayfreestone.com",
+    "url": "https://www.jayfreestone.com/"
+  },
   "license": "ISC",
   "dependencies": {
     "babel-core": "^6.26.3",
@@ -33,6 +37,11 @@
     "rollup-plugin-uglify": "^4.0.0",
     "typescript": "^2.9.2"
   },
+  "keywords": [
+    "spotlight",
+    "tour",
+    "walkthrough"
+  ],
   "release": {
     "plugins": [
       "@semantic-release/commit-analyzer",
