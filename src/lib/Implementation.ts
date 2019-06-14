@@ -27,6 +27,7 @@ class Implementation {
   private observer: MutationObserver;
   private isOpen: boolean;
   private caches: {
+    cornerSize: undefined|number,
     targetQuery: {
       elems: undefined|TargetType,
       result: undefined|string,
@@ -53,6 +54,7 @@ class Implementation {
     this.isOpen = false;
 
     this.caches = {
+      cornerSize: undefined,
       targetQuery: {
         elems: undefined,
         result: undefined,
@@ -106,8 +108,21 @@ class Implementation {
         style="${inlineVars.filter(Boolean).join(' ')}"
         aria-hidden
       >
-        ${this.elems.target.map((elem, i) => `
-          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}"></div>
+        ${this.elems.target.map((_, i) => `
+          <div id="${this.id}-window-area-${i}" class="${this.id}-window-area limelight__window-area">
+            ${u.generateIndexArr(4).map(windowNum => `
+              <div
+                class="${this.id}-window-corner limelight__window limelight__window--corner"
+                id="${this.id}-window-corner-${i}-${windowNum}"
+              ></div>
+            `).join('')}
+            ${u.generateIndexArr(2).map(frameNum => `
+              <div
+                class="${this.id}-window-frame limelight__window limelight__window--frame"
+                id="${this.id}-window-frame-${i}-${frameNum}"
+              ></div>
+            `).join('')}
+          </div>
         `).join('')}
       </div>
     `;
@@ -170,9 +185,11 @@ class Implementation {
   private init() {
     const svgElem = this.createBGElem();
     this.elems.limelight = svgElem.querySelector(`#${this.id}`);
-    this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
+    this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window-area`));
 
     this.elems.wrapper.appendChild(svgElem);
+
+    this.caches.cornerSize = parseInt(window.getComputedStyle(this.elems.limelight, null).getPropertyValue('--limelight-corner-size'));
 
     this.reposition();
   }
@@ -226,15 +243,51 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
-    this.elems.maskWindows.forEach((mask, i) => {
+    const { cornerSize } = this.caches;
+    const scrollPos = window.scrollY;
+    const overlap = 2;
+
+    this.elems.maskWindows.forEach((mask, maskNum) => {
       const pos = this.calculateOffsets(
-        this.elems.target[i].getBoundingClientRect(),
+        this.elems.target[maskNum].getBoundingClientRect(),
       );
 
-      mask.style.transform = `
-        translate(${pos.left}px, ${pos.top + window.scrollY}px)
-        scale(${pos.width}, ${pos.height})
-      `;
+      const corners = Array.from(mask.querySelectorAll(`.${this.id}-window-corner`));
+      const frames = Array.from(mask.querySelectorAll(`.${this.id}-window-frame`));
+
+      const cornerPositions = [
+        [pos.left, pos.top + scrollPos],
+        [pos.left + pos.width - cornerSize, pos.top + scrollPos],
+        [pos.left + pos.width - cornerSize, pos.top + scrollPos + pos.height - cornerSize],
+        [pos.left, pos.top + scrollPos + pos.height - cornerSize],
+      ]
+
+      const frameTransforms = [
+        {
+          translate: [pos.left + cornerSize - (overlap / 2), pos.top + scrollPos],
+          scale: [pos.width - (cornerSize * 2) + overlap, pos.height],
+        },
+        {
+          translate: [pos.left, pos.top + scrollPos + cornerSize - (overlap / 2)],
+          scale: [pos.width, pos.height - (cornerSize * 2) + overlap],
+        },
+      ];
+
+      cornerPositions.forEach(([leftOffset, topOffset], i) => {
+        (corners[i] as HTMLElement).style.transform = `
+          translate(${leftOffset}px, ${topOffset}px)
+        `;
+      });
+      
+      frameTransforms.forEach(({
+        translate: [translateX, translateY],
+        scale: [scaleX, scaleY],
+      }, i) => {
+        (frames[i] as HTMLElement).style.transform = `
+          translate(${translateX}px, ${translateY}px)
+          scale(${scaleX}, ${scaleY})
+        `;
+      });
     });
   }
 
