@@ -1,8 +1,8 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (global.Limelight = factory());
-}(this, (function () { 'use strict';
+  (global = global || self, global.Limelight = factory());
+}(this, function () { 'use strict';
 
   function mergeOptions(defaultOptions = {}, userOptions = {}) {
     return Object.keys(defaultOptions)
@@ -177,8 +177,8 @@
    * Main library class.
    */
   var Implementation = /** @class */ (function () {
-      function Implementation(target, wrapper, options$$1) {
-          if (options$$1 === void 0) { options$$1 = {}; }
+      function Implementation(target, wrapper, options$1) {
+          if (options$1 === void 0) { options$1 = {}; }
           this.id = "clipElem-" + u.uid();
           this.emitter = new EventEmitter();
           this.elems = {
@@ -189,7 +189,7 @@
               wrapper: wrapper,
           };
           this.observer = new MutationObserver(this.mutationCallback.bind(this));
-          this.options = u.mergeOptions(options, options$$1);
+          this.options = u.mergeOptions(options, options$1);
           this.isOpen = false;
           this.caches = {
               targetQuery: {
@@ -454,5 +454,5 @@
 
   return Limelight;
 
-})));
+}));
 //# sourceMappingURL=index.js.map
