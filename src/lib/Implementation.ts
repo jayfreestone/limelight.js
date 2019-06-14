@@ -107,7 +107,15 @@ class Implementation {
         aria-hidden
       >
         ${this.elems.target.map((elem, i) => `
-          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}"></div>
+          <div class="${this.id}-window limelight__window" id="${this.id}-window-${i}">
+            <div class="${this.id}-window-corner limelight__window-corner" id="${this.id}-window-corner-${i}-1"></div>
+            <div class="${this.id}-window-corner limelight__window-corner" id="${this.id}-window-corner-${i}-2"></div>
+            <div class="${this.id}-window-corner limelight__window-corner" id="${this.id}-window-corner-${i}-3"></div>
+            <div class="${this.id}-window-corner limelight__window-corner" id="${this.id}-window-corner-${i}-4"></div>
+
+            <div class="${this.id}-window-frame limelight__window-frame" id="${this.id}-window-frame-${i}-1"></div>
+            <div class="${this.id}-window-frame limelight__window-frame" id="${this.id}-window-frame-${i}-2"></div>
+          </div>
         `).join('')}
       </div>
     `;
@@ -128,10 +136,10 @@ class Implementation {
     } = position;
 
     return {
-      left: left - offset,
-      top: top - offset,
-      width: width + (offset * 2),
-      height: height + (offset * 2),
+      left: left - offset + 12,
+      top: top - offset + 12,
+      width: width + (offset * 2) - 24,
+      height: height + (offset * 2) - 24,
     };
   }
 
@@ -231,10 +239,64 @@ class Implementation {
         this.elems.target[i].getBoundingClientRect(),
       );
 
-      mask.style.transform = `
-        translate(${pos.left}px, ${pos.top + window.scrollY}px)
-        scale(${pos.width}, ${pos.height})
+      const maskMain = mask.querySelector(`.${this.id}-window-main`);
+
+      // maskMain.style.transform = `
+      //   translate(${pos.left}px, ${pos.top + window.scrollY}px)
+      //   scale(${pos.width}, ${pos.height})
+      // `;
+
+      const corners = Array.from(mask.querySelectorAll(`.${this.id}-window-corner`));
+      const frames = Array.from(mask.querySelectorAll(`.${this.id}-window-frame`));
+
+      frames[0].style.transform = `
+        translate(${pos.left}px, ${pos.top + window.scrollY - 12}px)
+        scale(${pos.width}, ${pos.height + 24})
       `;
+
+      frames[1].style.transform = `
+        translate(${pos.left - 12}px, ${pos.top + window.scrollY}px)
+        scale(${pos.width + 24}, ${pos.height})
+      `;
+
+      corners[0].style.transform = `
+        translate(${pos.left - 12}px, ${pos.top + window.scrollY - 12}px)
+      `;
+
+      corners[1].style.transform = `
+        translate(${pos.left + pos.width - 12}px, ${pos.top + window.scrollY - 12}px)
+      `;
+
+      corners[2].style.transform = `
+        translate(${pos.left + pos.width - 12}px, ${pos.top + window.scrollY + pos.height - 12}px)
+      `;
+
+      corners[3].style.transform = `
+        translate(${pos.left - 12}px, ${pos.top + window.scrollY + pos.height - 12}px)
+      `;
+
+      // corners[0].style.transform = `
+      //   translate(${pos.left - 24}px, ${pos.top + window.scrollY}px)
+      // `;
+
+      // corners[1].style.transform = `
+      //   translate(${pos.left + pos.width}px, ${pos.top + window.scrollY }px)
+      // `;
+
+      // corners[2].style.transform = `
+      //   translate(${pos.left + pos.width}px, ${pos.top + window.scrollY + pos.height - 24}px)
+      // `;
+
+      // corners[3].style.transform = `
+      //   translate(${pos.left - 24}px, ${pos.top + window.scrollY + pos.height - 24}px)
+      // `;
+
+      // console.log(pos.width - 24, pos.height - 24);
+
+      // maskMain.style.transform = `
+      //   translate(${pos.left}px, ${pos.top + window.scrollY}px)
+      //   scale(${pos.width}, ${pos.height})
+      // `;
     });
   }
 

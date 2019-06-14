@@ -22,12 +22,14 @@
     visibility: visible;
 }
 
-.limelight--is-active .limelight__window {
+.limelight--is-active .limelight__window-main,
+.limelight--is-active .limelight__window-corner,
+.limelight--is-active .limelight__window-frame {
     transition: transform 1s;
     transition: transform var(--limelight-window-transition-duration);
 }
 
-.limelight__window {
+.limelight__window-main {
     position: absolute;
     transform-origin: top left;
     width: 1px;
@@ -40,6 +42,51 @@
     box-shadow: 0 0 0 9999px var(--limelight-bg);
 }
 
+.limelight__window-corner {
+    content: '';
+    display: block;
+    background-color: grey;
+    width: 24px;
+    height: 24px;
+    position: absolute;
+}
+
+.limelight__window-frame {
+    content: '';
+    display: block;
+    background-color: grey;
+    width: 1px;
+    height: 1px;
+    transform-origin: top left;
+    position: absolute;
+}
+
+/* .limelight__window-frame:nth-child(odd) {
+    width: 1px;
+    height: 24px;
+}
+
+.limelight__window-frame:nth-child(even) {
+    width: 24px;
+    height: 1px;
+} */
+
+.limelight__window-corner:first-child {
+    border-top-left-radius: 8px;
+}
+
+.limelight__window-corner:nth-child(2) {
+    border-top-right-radius: 8px;
+}
+
+.limelight__window-corner:nth-child(3) {
+    border-bottom-right-radius: 8px;
+}
+
+.limelight__window-corner:nth-child(4) {
+    border-bottom-left-radius: 8px;
+}
+
 /**
  * If we support mix-blend-mode, prefer it over box-shadow.
  */
@@ -48,7 +95,7 @@
         mix-blend-mode: hard-light;
         background-color: var(--limelight-bg);
     }
-    .limelight__window {
+    .limelight__window-main {
         background-color: grey;
         box-shadow: none;
     }
