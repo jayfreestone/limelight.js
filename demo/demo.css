@@ -49,6 +49,7 @@ h2 {
 .site {
     background-color: #fff;
     min-height: 100vh;
+    position: relative;
 }
 
 .push-top {

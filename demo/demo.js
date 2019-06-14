@@ -1,9 +1,11 @@
 document.addEventListener("DOMContentLoaded", function demoInit() {
+  const wrapper = document.querySelector('.site');
   (() => {
     var demoBasic = document.querySelector(".js-demo-basic");
     var trigger = demoBasic.querySelector(".js-demo-basic__trigger");
     const inst = new Limelight(
       document.querySelector(".js-demo-basic__target"),
+      wrapper,
       {
         styles: {
           // bg: 'red',
@@ -23,7 +25,8 @@ document.addEventListener("DOMContentLoaded", function demoInit() {
     var demoAutoAdjust = document.querySelector(".js-demo-auto-adjust");
     var trigger = demoAutoAdjust.querySelector(".js-demo-auto-adjust__trigger");
     const inst = new Limelight(
-      document.querySelector(".js-demo-auto-adjust__target")
+      document.querySelector(".js-demo-auto-adjust__target"),
+      wrapper,
     );
 
     trigger.addEventListener("click", function(e) {
@@ -49,6 +52,7 @@ document.addEventListener("DOMContentLoaded", function demoInit() {
 
     const inst = new Limelight(
       initial,
+      wrapper,
       // {
       //   styles: {
       //     // bg: 'red',

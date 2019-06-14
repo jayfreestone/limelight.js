@@ -177,7 +177,7 @@
    * Main library class.
    */
   var Implementation = /** @class */ (function () {
-      function Implementation(target, options$$1) {
+      function Implementation(target, wrapper, options$$1) {
           if (options$$1 === void 0) { options$$1 = {}; }
           this.id = "clipElem-" + u.uid();
           this.emitter = new EventEmitter();
@@ -186,6 +186,7 @@
               target: Array.isArray(target) ? Array.from(target) : [target],
               limelight: undefined,
               maskWindows: undefined,
+              wrapper: wrapper,
           };
           this.observer = new MutationObserver(this.mutationCallback.bind(this));
           this.options = u.mergeOptions(options, options$$1);
@@ -285,13 +286,8 @@
           var svgElem = this.createBGElem();
           this.elems.limelight = svgElem.querySelector("#" + this.id);
           this.elems.maskWindows = Array.from(svgElem.querySelectorAll("." + this.id + "-window"));
-          document.body.appendChild(svgElem);
+          this.elems.wrapper.appendChild(svgElem);
           this.reposition();
-      };
-      Implementation.prototype.getPageHeight = function () {
-          var body = document.body;
-          var html = document.documentElement;
-          return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
       };
       /**
        * MutationObserver callback.
@@ -340,7 +336,6 @@
        */
       Implementation.prototype.reposition = function () {
           var _this = this;
-          this.elems.limelight.style.height = this.getPageHeight() + "px";
           this.elems.maskWindows.forEach(function (mask, i) {
               var pos = _this.calculateOffsets(_this.elems.target[i].getBoundingClientRect());
               mask.style.transform = "\n        translate(" + pos.left + "px, " + (pos.top + window.scrollY) + "px)\n        scale(" + pos.width + ", " + pos.height + ")\n      ";
@@ -381,7 +376,6 @@
               return;
           this.isOpen = false;
           this.elems.limelight.classList.remove(this.options.classes.activeClass);
-          this.elems.limelight.style.height = this.getPageHeight() + "px";
           this.emitter.trigger(new CloseEvent());
           this.listeners(false);
       };
@@ -409,9 +403,9 @@
    * Library Implementation with public API exposed.
    */
   var Limelight = /** @class */ (function () {
-      function Limelight(target, options) {
+      function Limelight(target, wrapper, options) {
           var _this = this;
-          var implementation = new Implementation(target, options);
+          var implementation = new Implementation(target, wrapper, options);
           publicAPI.forEach(function (prop) {
               _this[prop] = implementation[prop];
           });

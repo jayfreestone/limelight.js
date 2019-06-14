@@ -21,6 +21,7 @@ class Implementation {
     limelight: HTMLElement,
     // The transparent 'holes' in the overlay
     maskWindows: HTMLElement[],
+    wrapper: HTMLElement,
   };
   private readonly options: OptionsType;
   private observer: MutationObserver;
@@ -32,7 +33,7 @@ class Implementation {
     },
   };
 
-  constructor(target: TargetType, options: OptionsType = {}) {
+  constructor(target: TargetType, wrapper: HTMLElement, options: OptionsType = {}) {
     this.id = `clipElem-${u.uid()}`;
 
     this.emitter = new EventEmitter();
@@ -42,6 +43,7 @@ class Implementation {
       target: Array.isArray(target) ? Array.from(target) : [target],
       limelight: undefined,
       maskWindows: undefined,
+      wrapper,
     };
 
     this.observer = new MutationObserver(this.mutationCallback.bind(this));
@@ -170,22 +172,9 @@ class Implementation {
     this.elems.limelight = svgElem.querySelector(`#${this.id}`);
     this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
 
-    document.body.appendChild(svgElem);
+    this.elems.wrapper.appendChild(svgElem);
 
     this.reposition();
-  }
-
-  private getPageHeight() {
-    const body = document.body;
-    const html = document.documentElement;
-
-    return Math.max(
-      body.scrollHeight,
-      body.offsetHeight,
-      html.clientHeight,
-      html.scrollHeight,
-      html.offsetHeight,
-    );
   }
 
   /**
@@ -238,8 +227,6 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
-    this.elems.limelight.style.height = `${this.getPageHeight()}px`;
-
     this.elems.maskWindows.forEach((mask, i) => {
       const pos = this.calculateOffsets(
         this.elems.target[i].getBoundingClientRect(),
@@ -293,8 +280,6 @@ class Implementation {
     this.isOpen = false;
 
     this.elems.limelight.classList.remove(this.options.classes.activeClass);
-
-    this.elems.limelight.style.height = `${this.getPageHeight()}px`;
 
     this.emitter.trigger(new CloseEvent());
 

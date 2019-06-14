@@ -10,8 +10,8 @@ const publicAPI = ['on', 'open', 'refocus', 'destroy', 'reposition'];
  * Library Implementation with public API exposed.
  */
 class Limelight {
-  constructor(target: HTMLElement, options: OptionsType) {
-    const implementation = new Implementation(target, options);
+  constructor(target: HTMLElement, wrapper: HTMLElement, options: OptionsType) {
+    const implementation = new Implementation(target, wrapper, options);
 
     publicAPI.forEach((prop) => {
       this[prop] = implementation[prop];
