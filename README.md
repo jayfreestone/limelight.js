@@ -16,10 +16,22 @@ And include the CSS file (`dist/styles/style.css`) either through a `link` tag o
 
 ### Setup/basic usage
 
-Set up a new instance by passing the target (i.e. the element you want to highlight) as the first argument to the class:
+In order to use Limelight, you'll need to have a 'wrapper' div around your site with `position: relative` set on it. This is the element Limelight will append its absolutely-positioned overlay to.
+
+```html
+<body>
+  <!-- Wrapper div -->
+  <div class="site-wrapper">
+	<!-- Your site content. -->
+  </div>
+</body>
+```
+
+Set up a new instance by passing the target (i.e. the element you want to highlight) as the first argument to the class, and your global site wrapper as the second argument:
 
 	const inst = new Limelight(
 	  document.querySelector('.target-to-highlight')
+	  document.querySelector('.site-wrapper'),
 	);
 
 Then you can open the instance with the `open` method:
