@@ -3,6 +3,8 @@
     --limelight-overlay-transition-duration: 0.3s;
     --limelight-window-transition-duration: 1s;
     --limelight-z-index: 999;
+    --limelight-corner-size: 24px;
+    --limelight-border-radius: 8px;
     position: absolute;
     top: 0;
     right: 0;
@@ -22,69 +24,45 @@
     visibility: visible;
 }
 
-.limelight--is-active .limelight__window-main,
-.limelight--is-active .limelight__window-corner,
-.limelight--is-active .limelight__window-frame {
+.limelight--is-active .limelight__window {
     transition: transform 1s;
     transition: transform var(--limelight-window-transition-duration);
 }
 
-.limelight__window-main {
-    position: absolute;
-    transform-origin: top left;
+.limelight__window {
+    content: '';
+    display: block;
     width: 1px;
     height: 1px;
+    transform-origin: top left;
+    position: absolute;
     /**
      * Old style hack for highlighting, needed for Edge etc.
      * Falls back to black if custom properties not supported.
      */
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
-    box-shadow: 0 0 0 9999px var(--limelight-bg);
+    /* box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8); */
+    /* box-shadow: 0 0 0 9999px var(--limelight-bg); */
 }
 
-.limelight__window-corner {
-    content: '';
-    display: block;
-    background-color: grey;
-    width: 24px;
-    height: 24px;
-    position: absolute;
+.limelight__window--corner {
+    width: var(--limelight-corner-size);
+    height: var(--limelight-corner-size);
 }
 
-.limelight__window-frame {
-    content: '';
-    display: block;
-    background-color: grey;
-    width: 1px;
-    height: 1px;
-    transform-origin: top left;
-    position: absolute;
+.limelight__window--corner:first-child {
+    border-top-left-radius: var(--limelight-border-radius);
 }
 
-/* .limelight__window-frame:nth-child(odd) {
-    width: 1px;
-    height: 24px;
+.limelight__window--corner:nth-child(2) {
+    border-top-right-radius: var(--limelight-border-radius);
 }
 
-.limelight__window-frame:nth-child(even) {
-    width: 24px;
-    height: 1px;
-} */
-
-.limelight__window-corner:first-child {
-    border-top-left-radius: 8px;
+.limelight__window--corner:nth-child(3) {
+    border-bottom-right-radius: var(--limelight-border-radius);
 }
 
-.limelight__window-corner:nth-child(2) {
-    border-top-right-radius: 8px;
-}
-
-.limelight__window-corner:nth-child(3) {
-    border-bottom-right-radius: 8px;
-}
-
-.limelight__window-corner:nth-child(4) {
-    border-bottom-left-radius: 8px;
+.limelight__window--corner:nth-child(4) {
+    border-bottom-left-radius: var(--limelight-border-radius);
 }
 
 /**
@@ -95,8 +73,8 @@
         mix-blend-mode: hard-light;
         background-color: var(--limelight-bg);
     }
-    .limelight__window-main {
+
+    .limelight__window {
         background-color: grey;
-        box-shadow: none;
     }
 }

@@ -27,6 +27,7 @@ class Implementation {
   private observer: MutationObserver;
   private isOpen: boolean;
   private caches: {
+    cornerSize: undefined|number,
     targetQuery: {
       elems: undefined|TargetType,
       result: undefined|string,
@@ -53,6 +54,7 @@ class Implementation {
     this.isOpen = false;
 
     this.caches = {
+      cornerSize: undefined,
       targetQuery: {
         elems: undefined,
         result: undefined,
@@ -106,20 +108,17 @@ class Implementation {
         style="${inlineVars.filter(Boolean).join(' ')}"
         aria-hidden
       >
-        ${this.elems.target.map((elem, i) => `
-          <div
-            class="${this.id}-window limelight__window"
-            id="${this.id}-window-${i}"
-          >
+        ${this.elems.target.map((_, i) => `
+          <div id="${this.id}-window-area-${i}" class="${this.id}-window-area limelight__window-area">
             ${u.generateIndexArr(4).map(windowNum => `
               <div
-                class="${this.id}-window-corner limelight__window-corner"
+                class="${this.id}-window-corner limelight__window limelight__window--corner"
                 id="${this.id}-window-corner-${i}-${windowNum}"
               ></div>
             `).join('')}
             ${u.generateIndexArr(2).map(frameNum => `
               <div
-                class="${this.id}-window-frame limelight__window-frame"
+                class="${this.id}-window-frame limelight__window limelight__window--frame"
                 id="${this.id}-window-frame-${i}-${frameNum}"
               ></div>
             `).join('')}
@@ -144,10 +143,10 @@ class Implementation {
     } = position;
 
     return {
-      left: left - offset + 12,
-      top: top - offset + 12,
-      width: width + (offset * 2) - 24,
-      height: height + (offset * 2) - 24,
+      left: left - offset,
+      top: top - offset,
+      width: width + (offset * 2),
+      height: height + (offset * 2),
     };
   }
 
@@ -186,9 +185,11 @@ class Implementation {
   private init() {
     const svgElem = this.createBGElem();
     this.elems.limelight = svgElem.querySelector(`#${this.id}`);
-    this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window`));
+    this.elems.maskWindows = Array.from(svgElem.querySelectorAll(`.${this.id}-window-area`));
 
     this.elems.wrapper.appendChild(svgElem);
+
+    this.caches.cornerSize = parseInt(window.getComputedStyle(this.elems.limelight, null).getPropertyValue('--limelight-corner-size'));
 
     this.reposition();
   }
@@ -242,69 +243,51 @@ class Implementation {
    * Resets the position on the windows.
    */
   reposition() {
-    this.elems.maskWindows.forEach((mask, i) => {
+    const { cornerSize } = this.caches;
+    const scrollPos = window.scrollY;
+    const overlap = 2;
+
+    this.elems.maskWindows.forEach((mask, maskNum) => {
       const pos = this.calculateOffsets(
-        this.elems.target[i].getBoundingClientRect(),
+        this.elems.target[maskNum].getBoundingClientRect(),
       );
-
-      const maskMain = mask.querySelector(`.${this.id}-window-main`);
-
-      // maskMain.style.transform = `
-      //   translate(${pos.left}px, ${pos.top + window.scrollY}px)
-      //   scale(${pos.width}, ${pos.height})
-      // `;
 
       const corners = Array.from(mask.querySelectorAll(`.${this.id}-window-corner`));
       const frames = Array.from(mask.querySelectorAll(`.${this.id}-window-frame`));
 
-      frames[0].style.transform = `
-        translate(${pos.left}px, ${pos.top + window.scrollY - 12}px)
-        scale(${pos.width}, ${pos.height + 24})
-      `;
+      const cornerPositions = [
+        [pos.left, pos.top + scrollPos],
+        [pos.left + pos.width - cornerSize, pos.top + scrollPos],
+        [pos.left + pos.width - cornerSize, pos.top + scrollPos + pos.height - cornerSize],
+        [pos.left, pos.top + scrollPos + pos.height - cornerSize],
+      ]
 
-      frames[1].style.transform = `
-        translate(${pos.left - 12}px, ${pos.top + window.scrollY}px)
-        scale(${pos.width + 24}, ${pos.height})
-      `;
+      const frameTransforms = [
+        {
+          translate: [pos.left + cornerSize - (overlap / 2), pos.top + scrollPos],
+          scale: [pos.width - (cornerSize * 2) + overlap, pos.height],
+        },
+        {
+          translate: [pos.left, pos.top + scrollPos + cornerSize - (overlap / 2)],
+          scale: [pos.width, pos.height - (cornerSize * 2) + overlap],
+        },
+      ];
 
-      corners[0].style.transform = `
-        translate(${pos.left - 12}px, ${pos.top + window.scrollY - 12}px)
-      `;
-
-      corners[1].style.transform = `
-        translate(${pos.left + pos.width - 12}px, ${pos.top + window.scrollY - 12}px)
-      `;
-
-      corners[2].style.transform = `
-        translate(${pos.left + pos.width - 12}px, ${pos.top + window.scrollY + pos.height - 12}px)
-      `;
-
-      corners[3].style.transform = `
-        translate(${pos.left - 12}px, ${pos.top + window.scrollY + pos.height - 12}px)
-      `;
-
-      // corners[0].style.transform = `
-      //   translate(${pos.left - 24}px, ${pos.top + window.scrollY}px)
-      // `;
-
-      // corners[1].style.transform = `
-      //   translate(${pos.left + pos.width}px, ${pos.top + window.scrollY }px)
-      // `;
-
-      // corners[2].style.transform = `
-      //   translate(${pos.left + pos.width}px, ${pos.top + window.scrollY + pos.height - 24}px)
-      // `;
-
-      // corners[3].style.transform = `
-      //   translate(${pos.left - 24}px, ${pos.top + window.scrollY + pos.height - 24}px)
-      // `;
-
-      // console.log(pos.width - 24, pos.height - 24);
-
-      // maskMain.style.transform = `
-      //   translate(${pos.left}px, ${pos.top + window.scrollY}px)
-      //   scale(${pos.width}, ${pos.height})
-      // `;
+      cornerPositions.forEach(([leftOffset, topOffset], i) => {
+        (corners[i] as HTMLElement).style.transform = `
+          translate(${leftOffset}px, ${topOffset}px)
+        `;
+      });
+      
+      frameTransforms.forEach(({
+        translate: [translateX, translateY],
+        scale: [scaleX, scaleY],
+      }, i) => {
+        (frames[i] as HTMLElement).style.transform = `
+          translate(${translateX}px, ${translateY}px)
+          scale(${scaleX}, ${scaleY})
+        `;
+      });
     });
   }
 
