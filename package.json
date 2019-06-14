@@ -1,5 +1,5 @@
 {
-  "name": "limelight-js",
+  "name": "@jayfreestone/limelight.js",
   "version": "0.0.0-semantically-released",
   "description": "A tiny (and fast) JavaScript plugin that creates a spotlight around any element on the page.",
   "main": "dist/index.cjs.js",
@@ -48,5 +48,8 @@
         }
       ]
     ]
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
