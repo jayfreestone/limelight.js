@@ -4,6 +4,8 @@
 
 A tiny (and fast) JavaScript plugin that creates a spotlight around any element on the page.
 
+** Deprecated, kept for historical purposes. May revist in future. **
+
 ## Docs
 
 ### Installation
